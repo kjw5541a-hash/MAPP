@@ -12,6 +12,7 @@ export const THEMES = [
 export type ThemeId = (typeof THEMES)[number]["id"];
 
 const STORAGE_KEY = "mapp-theme";
+const API_KEY_STORAGE = "mapp-gemini-key";
 
 function isThemeId(value: string | null): value is ThemeId {
   return THEMES.some((t) => t.id === value);
@@ -36,6 +37,9 @@ function apply(theme: ThemeId) {
 interface SettingsState {
   theme: ThemeId;
   setTheme: (theme: ThemeId) => void;
+  /** Kept in device storage only — never bundled, never sent anywhere but Google. */
+  geminiApiKey: string;
+  setGeminiApiKey: (key: string) => void;
 }
 
 export const useSettingsStore = create<SettingsState>((set) => {
@@ -48,6 +52,14 @@ export const useSettingsStore = create<SettingsState>((set) => {
       localStorage.setItem(STORAGE_KEY, next);
       apply(next);
       set({ theme: next });
+    },
+
+    geminiApiKey: localStorage.getItem(API_KEY_STORAGE) ?? "",
+    setGeminiApiKey: (key) => {
+      const trimmed = key.trim();
+      if (trimmed) localStorage.setItem(API_KEY_STORAGE, trimmed);
+      else localStorage.removeItem(API_KEY_STORAGE);
+      set({ geminiApiKey: trimmed });
     },
   };
 });

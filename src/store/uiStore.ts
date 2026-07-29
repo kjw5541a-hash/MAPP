@@ -1,6 +1,7 @@
 import { create } from "zustand";
 
-export type Tab = "playlists" | "artists" | "albums" | "songs" | "search";
+export type Tab = "playlists" | "collection" | "songs" | "search" | "ai";
+export type CollectionMode = "albums" | "artists";
 
 export type Detail =
   | { type: "album"; key: string }
@@ -10,8 +11,10 @@ export type Detail =
 
 interface UIState {
   tab: Tab;
+  collectionMode: CollectionMode;
   detail: Detail;
   setTab: (tab: Tab) => void;
+  setCollectionMode: (mode: CollectionMode) => void;
   openAlbum: (key: string) => void;
   openArtist: (key: string) => void;
   openPlaylist: (id: string) => void;
@@ -20,8 +23,10 @@ interface UIState {
 
 export const useUIStore = create<UIState>((set) => ({
   tab: "songs",
+  collectionMode: "albums",
   detail: null,
   setTab: (tab) => set({ tab, detail: null }),
+  setCollectionMode: (collectionMode) => set({ collectionMode, detail: null }),
   openAlbum: (key) => set({ detail: { type: "album", key } }),
   openArtist: (key) => set({ detail: { type: "artist", key } }),
   openPlaylist: (id) => set({ detail: { type: "playlist", id } }),

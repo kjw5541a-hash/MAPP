@@ -1,12 +1,12 @@
-import { ListMusic, User, Disc3, Music2, Search } from "lucide-react";
+import { ListMusic, Disc3, Music2, Search, Sparkles } from "lucide-react";
 import { useUIStore, type Tab } from "../store/uiStore";
 
 const TABS: { id: Tab; label: string; icon: typeof ListMusic }[] = [
   { id: "playlists", label: "재생목록", icon: ListMusic },
-  { id: "artists", label: "아티스트", icon: User },
-  { id: "albums", label: "앨범", icon: Disc3 },
+  { id: "collection", label: "보관함", icon: Disc3 },
   { id: "songs", label: "곡", icon: Music2 },
   { id: "search", label: "검색", icon: Search },
+  { id: "ai", label: "AI추천", icon: Sparkles },
 ];
 
 export function TabBar() {

@@ -10,10 +10,10 @@ import { ImportToast } from "./components/ImportToast";
 import { ImportButton } from "./components/ImportButton";
 import { NowPlayingSheet } from "./components/NowPlaying/NowPlayingSheet";
 import { SongsList } from "./components/Library/SongsList";
-import { AlbumsGrid } from "./components/Library/AlbumsGrid";
+import { CollectionView } from "./components/Library/CollectionView";
 import { AlbumDetail } from "./components/Library/AlbumDetail";
-import { ArtistsList } from "./components/Library/ArtistsList";
 import { ArtistDetail } from "./components/Library/ArtistDetail";
+import { RecommendView } from "./components/Recommend/RecommendView";
 import { PlaylistsList } from "./components/Playlists/PlaylistsList";
 import { PlaylistDetail } from "./components/Playlists/PlaylistDetail";
 import { SearchView } from "./components/Search/SearchView";
@@ -21,10 +21,13 @@ import { SettingsSheet } from "./components/Settings/SettingsSheet";
 
 const TAB_TITLES: Record<string, string> = {
   playlists: "재생목록",
-  artists: "아티스트",
-  albums: "앨범",
+  collection: "보관함",
   songs: "곡",
+  ai: "AI 추천",
 };
+
+// These lay out their own scrolling region rather than sitting inside one.
+const SELF_SCROLLING: string[] = ["collection", "ai"];
 
 function App() {
   const init = useLibraryStore((s) => s.init);
@@ -54,7 +57,7 @@ function App() {
         <div className="flex items-center justify-between px-4 pb-2 shrink-0 safe-top">
           <h1 className="text-2xl font-bold">{TAB_TITLES[tab]}</h1>
           <div className="flex items-center gap-2">
-            <ImportButton />
+            {tab !== "ai" && <ImportButton />}
             <button
               type="button"
               aria-label="설정"
@@ -65,12 +68,17 @@ function App() {
             </button>
           </div>
         </div>
-        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain nm-scrollbar-none">
-          {tab === "playlists" && <PlaylistsList />}
-          {tab === "artists" && <ArtistsList />}
-          {tab === "albums" && <AlbumsGrid />}
-          {tab === "songs" && <SongsList />}
-        </div>
+        {SELF_SCROLLING.includes(tab) ? (
+          <div className="flex-1 min-h-0 flex flex-col">
+            {tab === "collection" && <CollectionView />}
+            {tab === "ai" && <RecommendView />}
+          </div>
+        ) : (
+          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain nm-scrollbar-none">
+            {tab === "playlists" && <PlaylistsList />}
+            {tab === "songs" && <SongsList />}
+          </div>
+        )}
       </div>
     );
   };

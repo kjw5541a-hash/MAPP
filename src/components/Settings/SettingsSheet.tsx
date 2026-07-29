@@ -7,6 +7,8 @@ import { usePlayerStore } from "../../store/playerStore";
 export function SettingsSheet({ onClose }: { onClose: () => void }) {
   const theme = useSettingsStore((s) => s.theme);
   const setTheme = useSettingsStore((s) => s.setTheme);
+  const apiKey = useSettingsStore((s) => s.geminiApiKey);
+  const setApiKey = useSettingsStore((s) => s.setGeminiApiKey);
   const tracks = useLibraryStore((s) => s.tracks);
   const playlists = useLibraryStore((s) => s.playlists);
   const clearLibrary = useLibraryStore((s) => s.clearLibrary);
@@ -49,6 +51,26 @@ export function SettingsSheet({ onClose }: { onClose: () => void }) {
               </button>
             );
           })}
+        </div>
+
+        <h2 className="text-[13px] text-nm-text-muted px-2 pt-8 pb-2">AI 추천</h2>
+        <div className="nm-flat rounded-2xl px-4 py-3">
+          <label className="text-[14px]" htmlFor="gemini-key">
+            Gemini API 키
+          </label>
+          <input
+            id="gemini-key"
+            type="password"
+            autoComplete="off"
+            value={apiKey}
+            onChange={(e) => setApiKey(e.target.value)}
+            placeholder="AIza…"
+            className="w-full nm-inset-sm rounded-xl px-3 py-2.5 mt-2 outline-none text-[14px] placeholder:text-nm-text-muted"
+          />
+          <p className="text-[12px] text-nm-text-muted mt-2 leading-relaxed">
+            이 기기에만 저장되며 앱 코드에는 포함되지 않습니다. Google AI Studio에서 무료로 발급받을
+            수 있습니다.
+          </p>
         </div>
 
         <h2 className="text-[13px] text-nm-text-muted px-2 pt-8 pb-2">라이브러리</h2>
