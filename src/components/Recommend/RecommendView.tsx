@@ -19,6 +19,7 @@ export function RecommendView() {
   const playing = usePlayerStore((s) => s.currentTrack());
   const tracks = useLibraryStore((s) => s.tracks);
   const apiKey = useSettingsStore((s) => s.geminiApiKey);
+  const model = useSettingsStore((s) => s.geminiModel);
 
   const [picked, setPicked] = useState<Track | null>(null);
   const [criteria, setCriteria] = useState<CriterionId[]>(DEFAULT_CRITERIA);
@@ -37,7 +38,7 @@ export function RecommendView() {
     setError(null);
     setResults(null);
     try {
-      setResults(await recommendSimilar(apiKey, base, criteria));
+      setResults(await recommendSimilar(apiKey, model, base, criteria));
     } catch (err) {
       setError(err instanceof Error ? err.message : "추천에 실패했습니다.");
     } finally {

@@ -3,12 +3,18 @@ import { ChevronDown, Check } from "lucide-react";
 import { useSettingsStore, THEMES } from "../../store/settingsStore";
 import { useLibraryStore } from "../../store/libraryStore";
 import { usePlayerStore } from "../../store/playerStore";
+import { listModels, type GeminiModel } from "../../lib/recommend";
 
 export function SettingsSheet({ onClose }: { onClose: () => void }) {
   const theme = useSettingsStore((s) => s.theme);
   const setTheme = useSettingsStore((s) => s.setTheme);
   const apiKey = useSettingsStore((s) => s.geminiApiKey);
   const setApiKey = useSettingsStore((s) => s.setGeminiApiKey);
+  const model = useSettingsStore((s) => s.geminiModel);
+  const setModel = useSettingsStore((s) => s.setGeminiModel);
+  const [models, setModels] = useState<GeminiModel[]>([]);
+  const [loadingModels, setLoadingModels] = useState(false);
+  const [modelError, setModelError] = useState<string | null>(null);
   const tracks = useLibraryStore((s) => s.tracks);
   const playlists = useLibraryStore((s) => s.playlists);
   const clearLibrary = useLibraryStore((s) => s.clearLibrary);
@@ -71,6 +77,53 @@ export function SettingsSheet({ onClose }: { onClose: () => void }) {
             이 기기에만 저장되며 앱 코드에는 포함되지 않습니다. Google AI Studio에서 무료로 발급받을
             수 있습니다.
           </p>
+
+          <div className="border-t border-nm-text/10 mt-4 pt-3">
+            <p className="text-[14px]">모델</p>
+            <p className="text-[12px] text-nm-text-muted mt-1 break-all">현재: {model}</p>
+
+            {models.length > 0 ? (
+              <select
+                value={models.some((m) => m.id === model) ? model : ""}
+                onChange={(e) => setModel(e.target.value)}
+                className="w-full nm-inset-sm rounded-xl px-3 py-2.5 mt-2 outline-none text-[14px]"
+              >
+                <option value="" disabled>
+                  모델 선택
+                </option>
+                {models.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.id}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <button
+                type="button"
+                disabled={!apiKey || loadingModels}
+                onClick={async () => {
+                  setLoadingModels(true);
+                  setModelError(null);
+                  try {
+                    setModels(await listModels(apiKey));
+                  } catch (err) {
+                    setModelError(err instanceof Error ? err.message : "불러오지 못했습니다.");
+                  } finally {
+                    setLoadingModels(false);
+                  }
+                }}
+                className="w-full py-2.5 rounded-xl nm-flat text-[13px] text-nm-accent mt-2 disabled:opacity-40"
+              >
+                {loadingModels ? "불러오는 중…" : "사용 가능한 모델 불러오기"}
+              </button>
+            )}
+
+            {modelError && (
+              <p className="text-[12px] text-red-500 mt-2 whitespace-pre-line break-words leading-relaxed">
+                {modelError}
+              </p>
+            )}
+          </div>
         </div>
 
         <h2 className="text-[13px] text-nm-text-muted px-2 pt-8 pb-2">라이브러리</h2>

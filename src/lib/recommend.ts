@@ -1,7 +1,31 @@
 import type { Track } from "../types";
 
-const MODEL = "gemini-2.0-flash";
-const ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
+const API_BASE = "https://generativelanguage.googleapis.com/v1beta";
+
+export const DEFAULT_MODEL = "gemini-2.0-flash";
+
+export interface GeminiModel {
+  id: string;
+  label: string;
+}
+
+/** Which models a key may actually call changes over time and differs per
+ *  project, so the list comes from Google rather than being hardcoded. */
+export async function listModels(apiKey: string): Promise<GeminiModel[]> {
+  const response = await fetch(
+    `${API_BASE}/models?pageSize=200&key=${encodeURIComponent(apiKey)}`,
+  );
+  if (!response.ok) throw await describeFailure(response, "");
+
+  const data = await response.json();
+  return ((data?.models ?? []) as Array<Record<string, unknown>>)
+    .filter((m) => (m.supportedGenerationMethods as string[])?.includes("generateContent"))
+    .map((m) => ({
+      id: String(m.name).replace(/^models\//, ""),
+      label: String(m.displayName ?? m.name),
+    }))
+    .filter((m) => !/embedding|aqa|vision/i.test(m.id));
+}
 
 export const CRITERIA = [
   { id: "mood", label: "분위기", hint: "곡이 주는 감정과 정서" },
@@ -72,7 +96,7 @@ function extractJson(text: string): unknown {
 
 /** Google explains precisely which limit or setting is at fault; swallowing
  *  that and showing a generic line leaves nothing to act on. */
-async function describeFailure(response: Response): Promise<Error> {
+async function describeFailure(response: Response, model: string): Promise<Error> {
   const raw = await response.text().catch(() => "");
   let message = "";
   let quota = "";
@@ -100,7 +124,15 @@ async function describeFailure(response: Response): Promise<Error> {
   }
   if (response.status === 404) {
     return new Error(
-      `모델(${MODEL})을 찾을 수 없습니다. 모델명이 바뀌었을 수 있습니다.\n\n${detail}`,
+      `모델 ${model}을(를) 찾을 수 없습니다. 설정에서 사용 가능한 모델을 불러와 다른 모델을 골라주세요.\n\n${detail}`,
+    );
+  }
+  // limit: 0 is not an allowance you used up — this key has no allowance for
+  // this model at all, so waiting changes nothing.
+  if (response.status === 429 && /limit:\s*0\b/.test(message)) {
+    return new Error(
+      `이 키는 ${model} 모델을 쓸 수 없습니다 (허용량이 0). 기다려도 풀리지 않습니다.\n` +
+        `설정에서 "사용 가능한 모델 불러오기"를 눌러 다른 모델을 골라주세요.\n\n${detail}`,
     );
   }
   if (response.status === 429) {
@@ -113,10 +145,12 @@ async function describeFailure(response: Response): Promise<Error> {
 
 export async function recommendSimilar(
   apiKey: string,
+  model: string,
   track: Track,
   criteria: CriterionId[],
 ): Promise<Recommendation[]> {
-  const response = await fetch(`${ENDPOINT}?key=${encodeURIComponent(apiKey)}`, {
+  const endpoint = `${API_BASE}/models/${model}:generateContent`;
+  const response = await fetch(`${endpoint}?key=${encodeURIComponent(apiKey)}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -125,7 +159,7 @@ export async function recommendSimilar(
     }),
   });
 
-  if (!response.ok) throw await describeFailure(response);
+  if (!response.ok) throw await describeFailure(response, model);
 
   const data = await response.json();
   const text: string | undefined = data?.candidates?.[0]?.content?.parts?.[0]?.text;
