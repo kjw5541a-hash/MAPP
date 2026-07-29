@@ -28,23 +28,17 @@ export function DetailScreen({
   headerExtra,
 }: DetailScreenProps) {
   const playQueue = usePlayerStore((s) => s.playQueue);
+  const playShuffled = usePlayerStore((s) => s.playShuffled);
   const currentTrackId = usePlayerStore((s) => s.currentTrack()?.id);
-  const shuffle = usePlayerStore((s) => s.shuffle);
-  const toggleShuffle = usePlayerStore((s) => s.toggleShuffle);
 
   const playAll = (startIndex = 0) => {
     playQueue(tracks, startIndex, source);
   };
 
-  const playShuffled = () => {
-    if (!shuffle) toggleShuffle();
-    playQueue(tracks, 0, source);
-  };
-
   return (
     <div className="flex flex-col h-full">
       <BackHeader title={title} onBack={onBack} />
-      <div className="flex-1 overflow-y-auto nm-scrollbar-none px-4 pb-4">
+      <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain nm-scrollbar-none px-4 pb-4">
         <div className="flex flex-col items-center text-center py-4 gap-3">
           <CoverArt artKey={coverArtKey} alt={title} className="w-44 h-44" rounded="rounded-2xl" />
           <div>
@@ -63,7 +57,7 @@ export function DetailScreen({
             </button>
             <button
               type="button"
-              onClick={playShuffled}
+              onClick={() => playShuffled(tracks, source)}
               className="flex items-center gap-2 px-6 py-2.5 rounded-full nm-raised text-nm-accent font-medium"
             >
               <Shuffle className="w-4 h-4" /> 셔플

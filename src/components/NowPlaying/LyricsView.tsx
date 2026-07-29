@@ -2,7 +2,7 @@ import type { Track } from "../../types";
 
 export function LyricsView({ track }: { track: Track }) {
   return (
-    <div className="w-full h-full overflow-y-auto nm-scrollbar-none nm-inset-sm rounded-3xl px-6 py-6">
+    <div className="w-full h-full overflow-y-auto overscroll-contain nm-scrollbar-none nm-inset-sm rounded-3xl px-6 py-6">
       {track.lyrics ? (
         <p className="whitespace-pre-wrap leading-relaxed text-[15px]">{track.lyrics}</p>
       ) : (

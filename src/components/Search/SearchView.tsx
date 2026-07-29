@@ -14,7 +14,7 @@ export function SearchView() {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="px-4 pt-3 pb-2 sticky top-0 bg-nm-bg/90 backdrop-blur z-10">
+      <div className="px-4 pb-2 shrink-0 safe-top">
         <div className="flex items-center gap-2 nm-inset-sm rounded-xl px-3 py-2.5">
           <Search className="w-4 h-4 text-nm-text-muted shrink-0" />
           <input
@@ -32,7 +32,7 @@ export function SearchView() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto nm-scrollbar-none px-4 pb-4">
+      <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain nm-scrollbar-none px-4 pb-4">
         {query.trim() === "" ? (
           <p className="text-center text-sm text-nm-text-muted py-10">
             찾고 싶은 곡, 아티스트, 앨범을 입력하세요.

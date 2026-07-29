@@ -42,10 +42,14 @@
   box-sizing: border-box;
 }
 
+/* The document itself must never scroll: on iOS a scrollable document lets a
+   drag anywhere — including the header and tab bar — move the whole page. */
 html,
 body,
 #root {
   height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
 }
 
 body {
@@ -53,7 +57,6 @@ body {
   background: var(--nm-bg);
   color: var(--nm-text);
   font-family: var(--font-family-sans);
-  overscroll-behavior: none;
 }
 
 button {
@@ -97,11 +100,15 @@ button {
   display: none;
 }
 
+/* These outrank Tailwind's padding utilities in the cascade and would silently
+   replace them, so they carry their own base spacing. The env() fallback is
+   required: without it the declaration is invalid wherever no safe area is
+   reported, which collapses the padding to zero. */
 .safe-top {
-  padding-top: env(safe-area-inset-top);
+  padding-top: calc(env(safe-area-inset-top, 0px) + 0.75rem);
 }
 .safe-bottom {
-  padding-bottom: env(safe-area-inset-bottom);
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 0.5rem);
 }
 
 /* Neumorphic range input (progress / seek bar) */

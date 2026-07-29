@@ -1,13 +1,26 @@
 import { create } from "zustand";
 import type { Track, RepeatMode, QueueSource } from "../types";
 
+function shuffleIndices(indices: number[]): number[] {
+  const out = [...indices];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
+// Turning shuffle on mid-playback must not cut off the track being played, so
+// it stays put and only what comes after it is reordered.
 function shuffledOrder(length: number, pinnedFirst: number): number[] {
   const rest = Array.from({ length }, (_, i) => i).filter((i) => i !== pinnedFirst);
-  for (let i = rest.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [rest[i], rest[j]] = [rest[j], rest[i]];
-  }
-  return [pinnedFirst, ...rest];
+  return [pinnedFirst, ...shuffleIndices(rest)];
+}
+
+// Starting from the shuffle button has nothing to preserve, so the first track
+// is randomised too.
+function fullShuffledOrder(length: number): number[] {
+  return shuffleIndices(Array.from({ length }, (_, i) => i));
 }
 
 interface PlayerState {
@@ -26,6 +39,7 @@ interface PlayerState {
 
   currentTrack: () => Track | null;
   playQueue: (tracks: Track[], startIndex: number, source: QueueSource) => void;
+  playShuffled: (tracks: Track[], source: QueueSource) => void;
   togglePlay: () => void;
   setPlaying: (playing: boolean) => void;
   next: () => void;
@@ -62,16 +76,24 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   },
 
   playQueue: (tracks, startIndex, source) => {
-    const { shuffle } = get();
-    const playOrder = shuffle
-      ? shuffledOrder(tracks.length, startIndex)
-      : tracks.map((_, i) => i);
-    const orderPos = shuffle ? 0 : startIndex;
+    const shuffleOn = get().shuffle;
     set({
       queue: tracks,
-      playOrder,
-      orderPos,
+      playOrder: shuffleOn ? shuffledOrder(tracks.length, startIndex) : tracks.map((_, i) => i),
+      orderPos: shuffleOn ? 0 : startIndex,
       source,
+      isPlaying: true,
+      progress: 0,
+    });
+  },
+
+  playShuffled: (tracks, source) => {
+    set({
+      queue: tracks,
+      playOrder: fullShuffledOrder(tracks.length),
+      orderPos: 0,
+      source,
+      shuffle: true,
       isPlaying: true,
       progress: 0,
     });

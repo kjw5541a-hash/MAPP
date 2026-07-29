@@ -14,9 +14,8 @@ export function PlaylistDetail({ playlistId }: { playlistId: string }) {
   const reorderPlaylist = useLibraryStore((s) => s.reorderPlaylist);
   const closeDetail = useUIStore((s) => s.closeDetail);
   const playQueue = usePlayerStore((s) => s.playQueue);
+  const playShuffled = usePlayerStore((s) => s.playShuffled);
   const currentTrackId = usePlayerStore((s) => s.currentTrack()?.id);
-  const shuffle = usePlayerStore((s) => s.shuffle);
-  const toggleShuffle = usePlayerStore((s) => s.toggleShuffle);
 
   if (!playlist) return null;
 
@@ -40,7 +39,7 @@ export function PlaylistDetail({ playlistId }: { playlistId: string }) {
   return (
     <div className="flex flex-col h-full">
       <BackHeader title={playlist.name} onBack={closeDetail} />
-      <div className="flex-1 overflow-y-auto nm-scrollbar-none px-4 pb-4">
+      <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain nm-scrollbar-none px-4 pb-4">
         <div className="flex flex-col items-center text-center py-4 gap-3">
           <CoverArt
             artKey={tracks[0]?.artKey}
@@ -64,10 +63,7 @@ export function PlaylistDetail({ playlistId }: { playlistId: string }) {
             <button
               type="button"
               disabled={tracks.length === 0}
-              onClick={() => {
-                if (!shuffle) toggleShuffle();
-                playQueue(tracks, 0, { type: "playlist", playlistId });
-              }}
+              onClick={() => playShuffled(tracks, { type: "playlist", playlistId })}
               className="flex items-center gap-2 px-6 py-2.5 rounded-full nm-raised text-nm-accent font-medium disabled:opacity-40"
             >
               <Shuffle className="w-4 h-4" /> 셔플

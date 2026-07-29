@@ -22,8 +22,8 @@ export function TabBar() {
             key={id}
             type="button"
             onClick={() => setTab(id)}
-            className={`flex flex-col items-center gap-0.5 px-3 py-1.5 min-w-16 ${
-              active ? "text-nm-accent" : "text-nm-text-muted"
+            className={`flex flex-col items-center gap-0.5 px-3 py-1.5 min-w-16 rounded-2xl transition-all ${
+              active ? "nm-pressed text-nm-accent" : "text-nm-text-muted"
             }`}
           >
             <Icon className="w-5.5 h-5.5" strokeWidth={active ? 2.4 : 2} />

@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useLibraryStore } from "./store/libraryStore";
 import { useUIStore } from "./store/uiStore";
 import { useAudioElement } from "./hooks/useAudioElement";
+import { useViewport } from "./hooks/useViewport";
 import { TabBar } from "./components/TabBar";
 import { MiniPlayer } from "./components/MiniPlayer";
 import { ImportButton } from "./components/ImportButton";
@@ -28,6 +29,8 @@ function App() {
   const tab = useUIStore((s) => s.tab);
   const detail = useUIStore((s) => s.detail);
 
+  const { keyboardOpen } = useViewport();
+
   useAudioElement();
 
   useEffect(() => {
@@ -43,11 +46,11 @@ function App() {
 
     return (
       <div className="flex flex-col h-full">
-        <div className="flex items-center justify-between px-4 pt-3 pb-2 sticky top-0 bg-nm-bg/90 backdrop-blur z-10 safe-top">
+        <div className="flex items-center justify-between px-4 pb-2 shrink-0 safe-top">
           <h1 className="text-2xl font-bold">{TAB_TITLES[tab]}</h1>
           <ImportButton />
         </div>
-        <div className="flex-1 overflow-y-auto nm-scrollbar-none">
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain nm-scrollbar-none">
           {tab === "playlists" && <PlaylistsList />}
           {tab === "artists" && <ArtistsList />}
           {tab === "albums" && <AlbumsGrid />}
@@ -58,14 +61,21 @@ function App() {
   };
 
   if (!ready) {
-    return <div className="h-screen w-screen bg-nm-bg" />;
+    return <div className="fixed inset-0 bg-nm-bg" />;
   }
 
   return (
-    <div className="h-screen w-screen flex flex-col overflow-hidden">
+    <div
+      className="fixed inset-x-0 top-0 flex flex-col overflow-hidden"
+      style={{ height: "var(--app-height, 100dvh)" }}
+    >
       <main className="flex-1 min-h-0">{renderContent()}</main>
-      <MiniPlayer />
-      <TabBar />
+      {!keyboardOpen && (
+        <>
+          <MiniPlayer />
+          <TabBar />
+        </>
+      )}
       <NowPlayingSheet />
     </div>
   );

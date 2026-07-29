@@ -16,8 +16,11 @@ export function Controls() {
       <button
         type="button"
         aria-label="셔플"
+        aria-pressed={shuffle}
         onClick={toggleShuffle}
-        className={`w-10 h-10 flex items-center justify-center ${shuffle ? "text-nm-accent" : "text-nm-text-muted"}`}
+        className={`w-11 h-11 rounded-full flex items-center justify-center transition-all ${
+          shuffle ? "nm-pressed text-nm-accent" : "text-nm-text-muted"
+        }`}
       >
         <Shuffle className="w-4.5 h-4.5" />
       </button>
@@ -56,8 +59,11 @@ export function Controls() {
       <button
         type="button"
         aria-label="반복"
+        aria-pressed={repeat !== "off"}
         onClick={cycleRepeat}
-        className={`w-10 h-10 flex items-center justify-center ${repeat !== "off" ? "text-nm-accent" : "text-nm-text-muted"}`}
+        className={`w-11 h-11 rounded-full flex items-center justify-center transition-all ${
+          repeat !== "off" ? "nm-pressed text-nm-accent" : "text-nm-text-muted"
+        }`}
       >
         {repeat === "one" ? <Repeat1 className="w-4.5 h-4.5" /> : <Repeat className="w-4.5 h-4.5" />}
       </button>

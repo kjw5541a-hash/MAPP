@@ -7,7 +7,7 @@ interface BackHeaderProps {
 
 export function BackHeader({ title, onBack }: BackHeaderProps) {
   return (
-    <div className="flex items-center gap-3 px-4 pt-3 pb-2 sticky top-0 bg-nm-bg/90 backdrop-blur z-10">
+    <div className="flex items-center gap-3 px-4 pb-2 shrink-0 safe-top">
       <button
         type="button"
         onClick={onBack}
