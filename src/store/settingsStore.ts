@@ -3,7 +3,10 @@ import { create } from "zustand";
 export const THEMES = [
   { id: "soft", label: "소프트", description: "부드러운 회색 뉴모피즘" },
   { id: "dark", label: "다크", description: "어두운 뉴모피즘" },
-  { id: "blue", label: "블루 글로우", description: "조작 요소에 파란 발광" },
+  { id: "blue", label: "블루 글로우", description: "깊게 파인 입체감에 파란 발광" },
+  { id: "clay", label: "클레이", description: "흰 배경에 도톰하게 떠 있는 3D" },
+  { id: "cream", label: "크림 민트", description: "따뜻한 아이보리에 민트 포인트" },
+  { id: "sticker", label: "스티커", description: "굵은 검정 테두리에 파스텔" },
 ] as const;
 
 export type ThemeId = (typeof THEMES)[number]["id"];

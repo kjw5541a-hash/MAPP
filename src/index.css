@@ -9,49 +9,132 @@
   --font-family-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Pretendard", system-ui, sans-serif;
 }
 
-/* Every theme sets the same variables, so switching one attribute on <html>
-   restyles the app without any component knowing which theme is active.
-   --nm-glow and --nm-accent-fill let a theme add gradients and glow that the
-   flatter themes simply leave neutral. */
+/* Every theme declares the same variables, so switching one attribute on
+   <html> restyles the app without any component knowing which theme is active.
+   Depth is each theme's own decision: they supply complete shadow strings
+   rather than tinting one fixed neumorphic recipe, which is what lets a puffy
+   clay surface and a flat outlined sticker share the same primitives. */
 :root,
 :root[data-theme="soft"] {
   color-scheme: light;
   --nm-bg: #e6e9ef;
+  --nm-surface: #e6e9ef;
   --nm-text: #3a3f4b;
   --nm-text-muted: #7c8291;
   --nm-accent: #6c7ae0;
-  --nm-shadow-light: #ffffff;
-  --nm-shadow-dark: #b9bec9;
+  --nm-border: 0 solid transparent;
+  --nm-raised: 6px 6px 12px #b9bec9, -6px -6px 12px #ffffff;
+  --nm-flat: 3px 3px 6px #b9bec9, -3px -3px 6px #ffffff;
+  --nm-pressed: inset 4px 4px 8px #b9bec9, inset -4px -4px 8px #ffffff;
+  --nm-inset: inset 2px 2px 4px #b9bec9, inset -2px -2px 4px #ffffff;
+  --nm-thumb: 2px 2px 4px #b9bec9, -2px -2px 4px #ffffff;
   --nm-glow: 0 0 0 0 transparent;
-  --nm-accent-fill: var(--nm-bg);
+  --nm-accent-fill: var(--nm-surface);
   --nm-accent-on-fill: var(--nm-accent);
 }
 
 :root[data-theme="dark"] {
   color-scheme: dark;
   --nm-bg: #23262e;
+  --nm-surface: #23262e;
   --nm-text: #e4e6eb;
   --nm-text-muted: #8b909c;
   --nm-accent: #8b97f2;
-  --nm-shadow-light: #2f333d;
-  --nm-shadow-dark: #171920;
+  --nm-border: 0 solid transparent;
+  --nm-raised: 6px 6px 12px #171920, -6px -6px 12px #2f333d;
+  --nm-flat: 3px 3px 6px #171920, -3px -3px 6px #2f333d;
+  --nm-pressed: inset 4px 4px 8px #171920, inset -4px -4px 8px #2f333d;
+  --nm-inset: inset 2px 2px 4px #171920, inset -2px -2px 4px #2f333d;
+  --nm-thumb: 2px 2px 4px #171920, -2px -2px 4px #2f333d;
   --nm-glow: 0 0 0 0 transparent;
-  --nm-accent-fill: var(--nm-bg);
+  --nm-accent-fill: var(--nm-surface);
   --nm-accent-on-fill: var(--nm-accent);
 }
 
-/* Soft neutral base, vivid blue reserved for things you operate. */
+/* Deep-set neumorphism: wide offsets for real thickness, plus a top highlight
+   so surfaces read as moulded rather than printed. */
 :root[data-theme="blue"] {
   color-scheme: light;
-  --nm-bg: #eef1f6;
-  --nm-text: #2c3444;
-  --nm-text-muted: #78829a;
+  --nm-bg: #e8edf5;
+  --nm-surface: #eef2f9;
+  --nm-text: #24304a;
+  --nm-text-muted: #6f7d99;
   --nm-accent: #1d7dff;
-  --nm-shadow-light: #ffffff;
-  --nm-shadow-dark: #c3cad8;
-  --nm-glow: 0 0 14px rgba(29, 125, 255, 0.45);
-  --nm-accent-fill: linear-gradient(180deg, #52a5ff 0%, #0f6fff 100%);
+  --nm-border: 0 solid transparent;
+  --nm-raised: 12px 12px 24px rgba(148, 163, 195, 0.62), -10px -10px 22px #ffffff,
+    inset 1px 1px 1px rgba(255, 255, 255, 0.85);
+  --nm-flat: 6px 6px 14px rgba(148, 163, 195, 0.5), -5px -5px 12px #ffffff,
+    inset 1px 1px 1px rgba(255, 255, 255, 0.7);
+  --nm-pressed: inset 7px 7px 14px rgba(148, 163, 195, 0.7), inset -6px -6px 12px #ffffff;
+  --nm-inset: inset 4px 4px 9px rgba(148, 163, 195, 0.6), inset -3px -3px 7px #ffffff;
+  --nm-thumb: 3px 3px 7px rgba(148, 163, 195, 0.65), -3px -3px 6px #ffffff;
+  --nm-glow: 0 0 18px rgba(29, 125, 255, 0.5);
+  --nm-accent-fill: linear-gradient(180deg, #5aa9ff 0%, #0b66f0 100%);
   --nm-accent-on-fill: #ffffff;
+}
+
+/* Puffy 3D plastic: one directional drop shadow doing all the lifting. */
+:root[data-theme="clay"] {
+  color-scheme: light;
+  --nm-bg: #eef0f6;
+  --nm-surface: #ffffff;
+  --nm-text: #1b2033;
+  --nm-text-muted: #7a8296;
+  --nm-accent: #17a349;
+  --nm-border: 0 solid transparent;
+  --nm-raised: 0 14px 28px rgba(24, 30, 55, 0.16), 0 4px 8px rgba(24, 30, 55, 0.1);
+  --nm-flat: 0 8px 18px rgba(24, 30, 55, 0.12), 0 2px 5px rgba(24, 30, 55, 0.08);
+  --nm-pressed: inset 0 4px 10px rgba(24, 30, 55, 0.18);
+  --nm-inset: inset 0 2px 6px rgba(24, 30, 55, 0.14);
+  --nm-thumb: 0 3px 8px rgba(24, 30, 55, 0.22);
+  --nm-glow: 0 8px 18px rgba(23, 163, 73, 0.4);
+  --nm-accent-fill: linear-gradient(180deg, #3ed172 0%, #17a349 100%);
+  --nm-accent-on-fill: #ffffff;
+}
+
+/* Warm ivory paper with mint, layered so cards sit visibly above the page. */
+:root[data-theme="cream"] {
+  color-scheme: light;
+  --nm-bg: #f3f0e8;
+  --nm-surface: #fbf9f4;
+  --nm-text: #38352e;
+  --nm-text-muted: #877f70;
+  --nm-accent: #3aa683;
+  --nm-border: 1px solid #e6e0d3;
+  --nm-raised: 0 12px 22px rgba(122, 110, 90, 0.2), 0 3px 6px rgba(122, 110, 90, 0.12);
+  --nm-flat: 0 6px 14px rgba(122, 110, 90, 0.16), 0 1px 3px rgba(122, 110, 90, 0.1);
+  --nm-pressed: inset 0 3px 8px rgba(122, 110, 90, 0.22);
+  --nm-inset: inset 0 2px 5px rgba(122, 110, 90, 0.18);
+  --nm-thumb: 0 3px 7px rgba(122, 110, 90, 0.26);
+  --nm-glow: 0 0 0 3px rgba(75, 184, 148, 0.4);
+  --nm-accent-fill: linear-gradient(180deg, #6fcfad 0%, #3aa683 100%);
+  --nm-accent-on-fill: #ffffff;
+}
+
+/* Sticker book: thick ink outlines and a hard offset instead of soft shading. */
+:root[data-theme="sticker"] {
+  color-scheme: light;
+  --nm-bg: #f7efe6;
+  --nm-surface: #fffdf9;
+  --nm-text: #211c18;
+  --nm-text-muted: #7d7168;
+  --nm-accent: #cf4f79;
+  --nm-border: 2.5px solid #211c18;
+  --nm-raised: 4px 4px 0 #211c18;
+  --nm-flat: 3px 3px 0 #211c18;
+  --nm-pressed: inset 3px 3px 0 rgba(33, 28, 24, 0.25);
+  --nm-inset: inset 2px 2px 0 rgba(33, 28, 24, 0.2);
+  --nm-thumb: 2px 2px 0 #211c18;
+  --nm-glow: 0 0 0 0 transparent;
+  --nm-accent-fill: #f4a8c0;
+  --nm-accent-on-fill: #211c18;
+  --nm-icon-stroke: 2.6;
+}
+
+/* Lucide sets stroke-width as an attribute; this overrides it, scoped to the
+   one theme that wants a heavier line. */
+:root[data-theme="sticker"] svg {
+  stroke-width: var(--nm-icon-stroke);
 }
 
 * {
@@ -76,45 +159,38 @@ body {
   font-family: var(--font-family-sans);
 }
 
-/* Neumorphic primitives */
+/* Primitives carry no look of their own: each theme supplies the border and
+   the complete shadow, so a new theme never needs a new class. */
 .nm-raised {
-  background: var(--nm-bg);
-  box-shadow:
-    6px 6px 12px var(--nm-shadow-dark),
-    -6px -6px 12px var(--nm-shadow-light);
-}
-
-.nm-pressed {
-  background: var(--nm-bg);
-  box-shadow:
-    inset 4px 4px 8px var(--nm-shadow-dark),
-    inset -4px -4px 8px var(--nm-shadow-light),
-    var(--nm-glow);
-}
-
-/* The one filled control on screen: play/pause. Themes decide whether it reads
-   as a plain neumorphic disc or a lit accent button. */
-.nm-accent-btn {
-  background: var(--nm-accent-fill);
-  color: var(--nm-accent-on-fill);
-  box-shadow:
-    6px 6px 12px var(--nm-shadow-dark),
-    -6px -6px 12px var(--nm-shadow-light),
-    var(--nm-glow);
+  background: var(--nm-surface);
+  border: var(--nm-border);
+  box-shadow: var(--nm-raised);
 }
 
 .nm-flat {
-  background: var(--nm-bg);
-  box-shadow:
-    3px 3px 6px var(--nm-shadow-dark),
-    -3px -3px 6px var(--nm-shadow-light);
+  background: var(--nm-surface);
+  border: var(--nm-border);
+  box-shadow: var(--nm-flat);
+}
+
+.nm-pressed {
+  background: var(--nm-surface);
+  border: var(--nm-border);
+  box-shadow: var(--nm-pressed), var(--nm-glow);
 }
 
 .nm-inset-sm {
-  background: var(--nm-bg);
-  box-shadow:
-    inset 2px 2px 4px var(--nm-shadow-dark),
-    inset -2px -2px 4px var(--nm-shadow-light);
+  background: var(--nm-surface);
+  border: var(--nm-border);
+  box-shadow: var(--nm-inset);
+}
+
+/* The one filled control on screen: play/pause. */
+.nm-accent-btn {
+  background: var(--nm-accent-fill);
+  color: var(--nm-accent-on-fill);
+  border: var(--nm-border);
+  box-shadow: var(--nm-raised), var(--nm-glow);
 }
 
 .nm-scrollbar-none {
@@ -147,9 +223,7 @@ body {
     var(--nm-accent) var(--progress-pct, 0%),
     transparent var(--progress-pct, 0%)
   );
-  box-shadow:
-    inset 2px 2px 4px var(--nm-shadow-dark),
-    inset -2px -2px 4px var(--nm-shadow-light);
+  box-shadow: var(--nm-inset);
 }
 .nm-progress::-webkit-slider-thumb {
   -webkit-appearance: none;
@@ -157,10 +231,8 @@ body {
   width: 16px;
   height: 16px;
   border-radius: 999px;
-  background: var(--nm-bg);
-  box-shadow:
-    2px 2px 4px var(--nm-shadow-dark),
-    -2px -2px 4px var(--nm-shadow-light);
+  background: var(--nm-surface);
+  box-shadow: var(--nm-thumb);
   cursor: pointer;
 }
 .nm-progress::-moz-range-thumb {
@@ -168,10 +240,8 @@ body {
   height: 16px;
   border: none;
   border-radius: 999px;
-  background: var(--nm-bg);
-  box-shadow:
-    2px 2px 4px var(--nm-shadow-dark),
-    -2px -2px 4px var(--nm-shadow-light);
+  background: var(--nm-surface);
+  box-shadow: var(--nm-thumb);
   cursor: pointer;
 }
 .nm-progress:disabled {
