@@ -2,7 +2,9 @@ import type { Track } from "../types";
 
 const API_BASE = "https://generativelanguage.googleapis.com/v1beta";
 
-export const DEFAULT_MODEL = "gemini-2.0-flash";
+// Whatever is current here goes stale as Google retires models; settings can
+// always fetch what a key actually has and override this.
+export const DEFAULT_MODEL = "gemini-3.5-flash-lite";
 
 export interface GeminiModel {
   id: string;
