@@ -3,7 +3,6 @@ import { ListMusic, Plus } from "lucide-react";
 import { useLibraryStore } from "../../store/libraryStore";
 import { useUIStore } from "../../store/uiStore";
 import { usePlayerStore } from "../../store/playerStore";
-import { useViewportDiagnostics } from "../../hooks/useViewportDiagnostics";
 import { CoverArt } from "../CoverArt";
 import { NewPlaylistModal } from "./NewPlaylistModal";
 
@@ -15,7 +14,6 @@ export function PlaylistsList() {
   const openPlaylist = useUIStore((s) => s.openPlaylist);
   const [showNew, setShowNew] = useState(false);
   const [confirmClear, setConfirmClear] = useState(false);
-  const diagnostics = useViewportDiagnostics();
 
   return (
     <div className="flex flex-col gap-1 px-4 py-2">
@@ -89,11 +87,6 @@ export function PlaylistsList() {
         )}
 
         <p className="text-center text-[11px] text-nm-text-muted/70 tabular-nums">{__BUILD_ID__}</p>
-        {diagnostics && (
-          <p className="text-center text-[10px] text-nm-text-muted/50 tabular-nums whitespace-pre-line leading-relaxed">
-            {diagnostics}
-          </p>
-        )}
       </div>
 
       {showNew && <NewPlaylistModal onClose={() => setShowNew(false)} />}

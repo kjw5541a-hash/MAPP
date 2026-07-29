@@ -17,8 +17,6 @@
 }
 
 :root {
-  /* Exposed so the in-app diagnostic can read what iOS actually reports. */
-  --sab: env(safe-area-inset-bottom, 0px);
   color-scheme: light dark;
   --nm-bg: var(--color-nm-bg);
   --nm-text: var(--color-nm-text);
