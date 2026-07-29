@@ -151,7 +151,11 @@ export function RecommendView() {
       </button>
 
       {error && (
-        <p className="text-[13px] text-red-500 text-center mt-4 leading-relaxed">{error}</p>
+        <div className="nm-inset-sm rounded-2xl px-4 py-3 mt-4">
+          <p className="text-[13px] text-red-500 whitespace-pre-line leading-relaxed break-words">
+            {error}
+          </p>
+        </div>
       )}
 
       {results && results.length === 0 && (

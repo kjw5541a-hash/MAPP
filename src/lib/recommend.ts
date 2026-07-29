@@ -1,7 +1,7 @@
 import type { Track } from "../types";
 
-const ENDPOINT =
-  "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
+const MODEL = "gemini-2.0-flash";
+const ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
 
 export const CRITERIA = [
   { id: "mood", label: "분위기", hint: "곡이 주는 감정과 정서" },
@@ -70,6 +70,47 @@ function extractJson(text: string): unknown {
   }
 }
 
+/** Google explains precisely which limit or setting is at fault; swallowing
+ *  that and showing a generic line leaves nothing to act on. */
+async function describeFailure(response: Response): Promise<Error> {
+  const raw = await response.text().catch(() => "");
+  let message = "";
+  let quota = "";
+  try {
+    const body = JSON.parse(raw);
+    message = body?.error?.message ?? "";
+    const failure = body?.error?.details?.find((d: { violations?: unknown[] }) => d.violations);
+    quota = failure?.violations
+      ?.map((v: { quotaId?: string; quotaMetric?: string }) => v.quotaId ?? v.quotaMetric)
+      .filter(Boolean)
+      .join(", ");
+  } catch {
+    message = raw.slice(0, 400);
+  }
+
+  const detail = [message, quota && `한도 항목: ${quota}`].filter(Boolean).join("\n");
+
+  if (response.status === 400 && /api[ _-]?key/i.test(message)) {
+    return new Error(`API 키가 올바르지 않습니다. 설정에서 다시 확인해주세요.\n\n${detail}`);
+  }
+  if (response.status === 403) {
+    return new Error(
+      `이 키로는 접근이 거부되었습니다. Google AI Studio에서 키가 살아있는지, 해당 프로젝트에 Generative Language API가 켜져 있는지 확인해주세요.\n\n${detail}`,
+    );
+  }
+  if (response.status === 404) {
+    return new Error(
+      `모델(${MODEL})을 찾을 수 없습니다. 모델명이 바뀌었을 수 있습니다.\n\n${detail}`,
+    );
+  }
+  if (response.status === 429) {
+    return new Error(
+      `Google이 사용 한도 초과로 거절했습니다. 분당 한도라면 1분 뒤 다시 되고, 일일 한도라면 내일 풀립니다.\n\n${detail}`,
+    );
+  }
+  return new Error(`추천 요청이 실패했습니다 (${response.status}).\n\n${detail}`);
+}
+
 export async function recommendSimilar(
   apiKey: string,
   track: Track,
@@ -84,16 +125,7 @@ export async function recommendSimilar(
     }),
   });
 
-  if (!response.ok) {
-    const detail = await response.text().catch(() => "");
-    if (response.status === 400 && detail.includes("API_KEY")) {
-      throw new Error("API 키가 올바르지 않습니다. 설정에서 다시 확인해주세요.");
-    }
-    if (response.status === 429) {
-      throw new Error("요청 한도를 넘었습니다. 잠시 후 다시 시도해주세요.");
-    }
-    throw new Error(`추천 요청이 실패했습니다 (${response.status}).`);
-  }
+  if (!response.ok) throw await describeFailure(response);
 
   const data = await response.json();
   const text: string | undefined = data?.candidates?.[0]?.content?.parts?.[0]?.text;
