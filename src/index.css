@@ -1,40 +1,57 @@
 @import "tailwindcss";
 
 @theme {
-  --color-nm-bg: #e6e9ef;
-  --color-nm-surface: #e6e9ef;
-  --color-nm-text: #3a3f4b;
-  --color-nm-text-muted: #7c8291;
-  --color-nm-accent: #6c7ae0;
-
-  --color-nm-bg-dark: #23262e;
-  --color-nm-surface-dark: #23262e;
-  --color-nm-text-dark: #e4e6eb;
-  --color-nm-text-muted-dark: #8b909c;
-  --color-nm-accent-dark: #8b97f2;
+  --color-nm-bg: var(--nm-bg);
+  --color-nm-text: var(--nm-text);
+  --color-nm-text-muted: var(--nm-text-muted);
+  --color-nm-accent: var(--nm-accent);
 
   --font-family-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Pretendard", system-ui, sans-serif;
 }
 
-:root {
-  color-scheme: light dark;
-  --nm-bg: var(--color-nm-bg);
-  --nm-text: var(--color-nm-text);
-  --nm-text-muted: var(--color-nm-text-muted);
-  --nm-accent: var(--color-nm-accent);
+/* Every theme sets the same variables, so switching one attribute on <html>
+   restyles the app without any component knowing which theme is active.
+   --nm-glow and --nm-accent-fill let a theme add gradients and glow that the
+   flatter themes simply leave neutral. */
+:root,
+:root[data-theme="soft"] {
+  color-scheme: light;
+  --nm-bg: #e6e9ef;
+  --nm-text: #3a3f4b;
+  --nm-text-muted: #7c8291;
+  --nm-accent: #6c7ae0;
   --nm-shadow-light: #ffffff;
   --nm-shadow-dark: #b9bec9;
+  --nm-glow: 0 0 0 0 transparent;
+  --nm-accent-fill: var(--nm-bg);
+  --nm-accent-on-fill: var(--nm-accent);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --nm-bg: var(--color-nm-bg-dark);
-    --nm-text: var(--color-nm-text-dark);
-    --nm-text-muted: var(--color-nm-text-muted-dark);
-    --nm-accent: var(--color-nm-accent-dark);
-    --nm-shadow-light: #2f333d;
-    --nm-shadow-dark: #171920;
-  }
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --nm-bg: #23262e;
+  --nm-text: #e4e6eb;
+  --nm-text-muted: #8b909c;
+  --nm-accent: #8b97f2;
+  --nm-shadow-light: #2f333d;
+  --nm-shadow-dark: #171920;
+  --nm-glow: 0 0 0 0 transparent;
+  --nm-accent-fill: var(--nm-bg);
+  --nm-accent-on-fill: var(--nm-accent);
+}
+
+/* Soft neutral base, vivid blue reserved for things you operate. */
+:root[data-theme="blue"] {
+  color-scheme: light;
+  --nm-bg: #eef1f6;
+  --nm-text: #2c3444;
+  --nm-text-muted: #78829a;
+  --nm-accent: #1d7dff;
+  --nm-shadow-light: #ffffff;
+  --nm-shadow-dark: #c3cad8;
+  --nm-glow: 0 0 14px rgba(29, 125, 255, 0.45);
+  --nm-accent-fill: linear-gradient(180deg, #52a5ff 0%, #0f6fff 100%);
+  --nm-accent-on-fill: #ffffff;
 }
 
 * {
@@ -59,11 +76,6 @@ body {
   font-family: var(--font-family-sans);
 }
 
-button {
-  font-family: inherit;
-  color: inherit;
-}
-
 /* Neumorphic primitives */
 .nm-raised {
   background: var(--nm-bg);
@@ -76,7 +88,19 @@ button {
   background: var(--nm-bg);
   box-shadow:
     inset 4px 4px 8px var(--nm-shadow-dark),
-    inset -4px -4px 8px var(--nm-shadow-light);
+    inset -4px -4px 8px var(--nm-shadow-light),
+    var(--nm-glow);
+}
+
+/* The one filled control on screen: play/pause. Themes decide whether it reads
+   as a plain neumorphic disc or a lit accent button. */
+.nm-accent-btn {
+  background: var(--nm-accent-fill);
+  color: var(--nm-accent-on-fill);
+  box-shadow:
+    6px 6px 12px var(--nm-shadow-dark),
+    -6px -6px 12px var(--nm-shadow-light),
+    var(--nm-glow);
 }
 
 .nm-flat {

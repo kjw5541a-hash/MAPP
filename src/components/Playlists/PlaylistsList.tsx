@@ -2,18 +2,14 @@ import { useState } from "react";
 import { ListMusic, Plus } from "lucide-react";
 import { useLibraryStore } from "../../store/libraryStore";
 import { useUIStore } from "../../store/uiStore";
-import { usePlayerStore } from "../../store/playerStore";
 import { CoverArt } from "../CoverArt";
 import { NewPlaylistModal } from "./NewPlaylistModal";
 
 export function PlaylistsList() {
   const playlists = useLibraryStore((s) => s.playlists);
   const tracks = useLibraryStore((s) => s.tracks);
-  const clearLibrary = useLibraryStore((s) => s.clearLibrary);
-  const resetPlayer = usePlayerStore((s) => s.reset);
   const openPlaylist = useUIStore((s) => s.openPlaylist);
   const [showNew, setShowNew] = useState(false);
-  const [confirmClear, setConfirmClear] = useState(false);
 
   return (
     <div className="flex flex-col gap-1 px-4 py-2">
@@ -51,43 +47,6 @@ export function PlaylistsList() {
           </button>
         );
       })}
-
-      <div className="pt-10 pb-2 flex flex-col items-center gap-2">
-        {confirmClear ? (
-          <div className="flex items-center gap-2 text-[13px]">
-            <span className="text-nm-text-muted">전체 {tracks.length}곡을 지울까요?</span>
-            <button
-              type="button"
-              onClick={() => setConfirmClear(false)}
-              className="px-3 py-1.5 rounded-full nm-flat"
-            >
-              취소
-            </button>
-            <button
-              type="button"
-              onClick={async () => {
-                resetPlayer();
-                await clearLibrary();
-                setConfirmClear(false);
-              }}
-              className="px-3 py-1.5 rounded-full nm-flat text-red-500"
-            >
-              지우기
-            </button>
-          </div>
-        ) : (
-          <button
-            type="button"
-            disabled={tracks.length === 0 && playlists.length === 0}
-            onClick={() => setConfirmClear(true)}
-            className="text-[12px] text-nm-text-muted/80 disabled:opacity-40"
-          >
-            라이브러리 전체 비우기
-          </button>
-        )}
-
-        <p className="text-center text-[11px] text-nm-text-muted/70 tabular-nums">{__BUILD_ID__}</p>
-      </div>
 
       {showNew && <NewPlaylistModal onClose={() => setShowNew(false)} />}
     </div>

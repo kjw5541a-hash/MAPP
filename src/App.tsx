@@ -1,4 +1,5 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { Settings as SettingsIcon } from "lucide-react";
 import { useLibraryStore } from "./store/libraryStore";
 import { useUIStore } from "./store/uiStore";
 import { useAudioElement } from "./hooks/useAudioElement";
@@ -16,6 +17,7 @@ import { ArtistDetail } from "./components/Library/ArtistDetail";
 import { PlaylistsList } from "./components/Playlists/PlaylistsList";
 import { PlaylistDetail } from "./components/Playlists/PlaylistDetail";
 import { SearchView } from "./components/Search/SearchView";
+import { SettingsSheet } from "./components/Settings/SettingsSheet";
 
 const TAB_TITLES: Record<string, string> = {
   playlists: "재생목록",
@@ -29,6 +31,8 @@ function App() {
   const ready = useLibraryStore((s) => s.ready);
   const tab = useUIStore((s) => s.tab);
   const detail = useUIStore((s) => s.detail);
+
+  const [showSettings, setShowSettings] = useState(false);
 
   const { keyboardOpen } = useViewport();
 
@@ -49,7 +53,17 @@ function App() {
       <div className="flex flex-col h-full">
         <div className="flex items-center justify-between px-4 pb-2 shrink-0 safe-top">
           <h1 className="text-2xl font-bold">{TAB_TITLES[tab]}</h1>
-          <ImportButton />
+          <div className="flex items-center gap-2">
+            <ImportButton />
+            <button
+              type="button"
+              aria-label="설정"
+              onClick={() => setShowSettings(true)}
+              className="w-9 h-9 rounded-full nm-flat flex items-center justify-center shrink-0"
+            >
+              <SettingsIcon className="w-5 h-5" />
+            </button>
+          </div>
         </div>
         <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain nm-scrollbar-none">
           {tab === "playlists" && <PlaylistsList />}
@@ -76,6 +90,7 @@ function App() {
         </>
       )}
       <NowPlayingSheet />
+      {showSettings && <SettingsSheet onClose={() => setShowSettings(false)} />}
     </div>
   );
 }

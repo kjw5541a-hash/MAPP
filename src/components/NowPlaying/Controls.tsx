@@ -38,7 +38,7 @@ export function Controls() {
         type="button"
         aria-label={isPlaying ? "일시정지" : "재생"}
         onClick={togglePlay}
-        className="w-16 h-16 rounded-full nm-raised flex items-center justify-center text-nm-accent"
+        className="w-16 h-16 rounded-full nm-accent-btn flex items-center justify-center"
       >
         {isPlaying ? (
           <Pause className="w-7 h-7 fill-current" />
