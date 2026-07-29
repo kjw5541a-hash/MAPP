@@ -65,10 +65,7 @@ function App() {
   }
 
   return (
-    <div
-      className="fixed inset-x-0 top-0 flex flex-col overflow-hidden"
-      style={{ height: "var(--app-height, 100dvh)" }}
-    >
+    <div className="fixed inset-x-0 top-0 h-dvh flex flex-col overflow-hidden">
       <main className="flex-1 min-h-0">{renderContent()}</main>
       {!keyboardOpen && (
         <>
