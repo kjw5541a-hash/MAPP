@@ -1,7 +1,24 @@
+import { execSync } from 'node:child_process'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
+
+// Shown in-app so it is possible to tell at a glance whether a device is still
+// serving an older build out of the service worker cache.
+function buildId() {
+  const sha =
+    process.env.GITHUB_SHA?.slice(0, 7) ??
+    (() => {
+      try {
+        return execSync('git rev-parse --short HEAD').toString().trim()
+      } catch {
+        return 'local'
+      }
+    })()
+  const time = new Date().toISOString().slice(0, 16).replace('T', ' ')
+  return `${time}Z · ${sha}`
+}
 
 // Served from https://<user>.github.io/MAPP/, so every URL must resolve under
 // that subpath. Manifest paths are relative for that reason.
@@ -10,6 +27,9 @@ const base = '/MAPP/'
 // https://vite.dev/config/
 export default defineConfig({
   base,
+  define: {
+    __BUILD_ID__: JSON.stringify(buildId()),
+  },
   plugins: [
     react(),
     tailwindcss(),

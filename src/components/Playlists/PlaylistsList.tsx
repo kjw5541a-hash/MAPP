@@ -48,6 +48,10 @@ export function PlaylistsList() {
         );
       })}
 
+      <p className="text-center text-[11px] text-nm-text-muted/70 pt-8 pb-2 tabular-nums">
+        {__BUILD_ID__}
+      </p>
+
       {showNew && <NewPlaylistModal onClose={() => setShowNew(false)} />}
     </div>
   );
