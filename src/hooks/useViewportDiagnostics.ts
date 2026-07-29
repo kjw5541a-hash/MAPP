@@ -19,9 +19,17 @@ export function useViewportDiagnostics() {
       const nav = document.querySelector("nav")?.getBoundingClientRect();
       const gap = nav ? Math.round(window.innerHeight - nav.bottom) : -1;
 
+      // screen.height settles whether the missing strip is outside the page's
+      // viewport at all, or the display is simply running zoomed.
+      const standalone =
+        window.matchMedia("(display-mode: standalone)").matches ||
+        (navigator as { standalone?: boolean }).standalone === true;
+
       setText(
         `ih${window.innerHeight} vv${Math.round(window.visualViewport?.height ?? 0)} ` +
-          `ch${document.documentElement.clientHeight} dvh${dvh} sab${sab} gap${gap}`,
+          `ch${document.documentElement.clientHeight} dvh${dvh} sab${sab} gap${gap}\n` +
+          `sh${window.screen.height} aw${window.screen.availHeight} ` +
+          `dpr${window.devicePixelRatio} standalone${standalone ? 1 : 0}`,
       );
     };
 

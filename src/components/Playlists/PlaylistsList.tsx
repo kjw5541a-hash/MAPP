@@ -90,7 +90,9 @@ export function PlaylistsList() {
 
         <p className="text-center text-[11px] text-nm-text-muted/70 tabular-nums">{__BUILD_ID__}</p>
         {diagnostics && (
-          <p className="text-center text-[10px] text-nm-text-muted/50 tabular-nums">{diagnostics}</p>
+          <p className="text-center text-[10px] text-nm-text-muted/50 tabular-nums whitespace-pre-line leading-relaxed">
+            {diagnostics}
+          </p>
         )}
       </div>
 
