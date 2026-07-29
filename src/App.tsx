@@ -5,6 +5,7 @@ import { useAudioElement } from "./hooks/useAudioElement";
 import { useViewport } from "./hooks/useViewport";
 import { TabBar } from "./components/TabBar";
 import { MiniPlayer } from "./components/MiniPlayer";
+import { ImportToast } from "./components/ImportToast";
 import { ImportButton } from "./components/ImportButton";
 import { NowPlayingSheet } from "./components/NowPlaying/NowPlayingSheet";
 import { SongsList } from "./components/Library/SongsList";
@@ -65,10 +66,11 @@ function App() {
   }
 
   return (
-    <div className="fixed inset-x-0 top-0 h-dvh flex flex-col overflow-hidden">
+    <div className="fixed inset-0 flex flex-col overflow-hidden">
       <main className="flex-1 min-h-0">{renderContent()}</main>
       {!keyboardOpen && (
         <>
+          <ImportToast />
           <MiniPlayer />
           <TabBar />
         </>

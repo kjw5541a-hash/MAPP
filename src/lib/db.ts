@@ -61,6 +61,18 @@ export async function deleteTrack(track: Track) {
   ]);
 }
 
+export async function clearAll() {
+  const db = await getDB();
+  const tx = db.transaction(["tracks", "trackFiles", "trackArt", "playlists"], "readwrite");
+  await Promise.all([
+    tx.objectStore("tracks").clear(),
+    tx.objectStore("trackFiles").clear(),
+    tx.objectStore("trackArt").clear(),
+    tx.objectStore("playlists").clear(),
+    tx.done,
+  ]);
+}
+
 export async function getAllPlaylists(): Promise<Playlist[]> {
   const db = await getDB();
   return db.getAll("playlists");

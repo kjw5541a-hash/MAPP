@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import type { Track, Playlist } from "../types";
 import * as db from "../lib/db";
-import { parseM4aFile } from "../lib/metadata";
+import { parseM4aFile, hashFile } from "../lib/metadata";
 
 interface ImportProgress {
   active: boolean;
@@ -9,14 +9,23 @@ interface ImportProgress {
   total: number;
 }
 
+export interface ImportResult {
+  added: number;
+  skipped: number;
+  failed: number;
+}
+
 interface LibraryState {
   ready: boolean;
   tracks: Track[];
   playlists: Playlist[];
   importProgress: ImportProgress;
+  importResult: ImportResult | null;
   init: () => Promise<void>;
   importFiles: (files: FileList | File[]) => Promise<void>;
+  dismissImportResult: () => void;
   deleteTrack: (id: string) => Promise<void>;
+  clearLibrary: () => Promise<void>;
   createPlaylist: (name: string) => Promise<Playlist>;
   renamePlaylist: (id: string, name: string) => Promise<void>;
   deletePlaylist: (id: string) => Promise<void>;
@@ -30,6 +39,7 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
   tracks: [],
   playlists: [],
   importProgress: { active: false, done: 0, total: 0 },
+  importResult: null,
 
   init: async () => {
     const [tracks, playlists] = await Promise.all([db.getAllTracks(), db.getAllPlaylists()]);
@@ -39,24 +49,45 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
 
   importFiles: async (files) => {
     const list = Array.from(files);
-    set({ importProgress: { active: true, done: 0, total: list.length } });
+    // Seeded from the library so re-picking a whole folder only brings in what
+    // is new, and grows as we go so one selection cannot add the same file twice.
+    const seen = new Set(get().tracks.map((t) => t.hash).filter(Boolean) as string[]);
+    let added = 0;
+    let skipped = 0;
+    let failed = 0;
+
+    set({ importProgress: { active: true, done: 0, total: list.length }, importResult: null });
+
     for (const file of list) {
       try {
-        const { track, fileBlob, artBlob } = await parseM4aFile(file);
-        await db.addTrack(track, fileBlob, artBlob);
-        set((state) => ({
-          tracks: [...state.tracks, track].sort((a, b) => a.title.localeCompare(b.title)),
-          importProgress: { ...state.importProgress, done: state.importProgress.done + 1 },
-        }));
+        const hash = await hashFile(file);
+        if (seen.has(hash)) {
+          skipped++;
+        } else {
+          seen.add(hash);
+          const { track, fileBlob, artBlob } = await parseM4aFile(file, hash);
+          await db.addTrack(track, fileBlob, artBlob);
+          added++;
+          set((state) => ({
+            tracks: [...state.tracks, track].sort((a, b) => a.title.localeCompare(b.title)),
+          }));
+        }
       } catch (err) {
         console.error("Failed to import", file.name, err);
-        set((state) => ({
-          importProgress: { ...state.importProgress, done: state.importProgress.done + 1 },
-        }));
+        failed++;
       }
+      set((state) => ({
+        importProgress: { ...state.importProgress, done: state.importProgress.done + 1 },
+      }));
     }
-    set({ importProgress: { active: false, done: 0, total: 0 } });
+
+    set({
+      importProgress: { active: false, done: 0, total: 0 },
+      importResult: { added, skipped, failed },
+    });
   },
+
+  dismissImportResult: () => set({ importResult: null }),
 
   deleteTrack: async (id) => {
     const track = get().tracks.find((t) => t.id === id);
@@ -68,6 +99,11 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
     }));
     await Promise.all(playlists.map((p) => db.savePlaylist(p)));
     set((state) => ({ tracks: state.tracks.filter((t) => t.id !== id), playlists }));
+  },
+
+  clearLibrary: async () => {
+    await db.clearAll();
+    set({ tracks: [], playlists: [], importResult: null });
   },
 
   createPlaylist: async (name) => {

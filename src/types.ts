@@ -8,6 +8,9 @@ export interface Track {
   dateAdded: number;
   fileKey: string;
   artKey?: string;
+  /** SHA-256 of the source file, used to skip re-imports. Absent on tracks
+   *  imported before this existed. */
+  hash?: string;
 }
 
 export interface Playlist {

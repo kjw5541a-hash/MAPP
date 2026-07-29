@@ -38,6 +38,7 @@ interface PlayerState {
   showLyrics: boolean;
 
   currentTrack: () => Track | null;
+  reset: () => void;
   playQueue: (tracks: Track[], startIndex: number, source: QueueSource) => void;
   playShuffled: (tracks: Track[], source: QueueSource) => void;
   togglePlay: () => void;
@@ -74,6 +75,19 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     const queueIndex = playOrder[orderPos];
     return queueIndex === undefined ? null : (queue[queueIndex] ?? null);
   },
+
+  reset: () =>
+    set({
+      queue: [],
+      playOrder: [],
+      orderPos: 0,
+      isPlaying: false,
+      progress: 0,
+      duration: 0,
+      source: null,
+      showNowPlaying: false,
+      showLyrics: false,
+    }),
 
   playQueue: (tracks, startIndex, source) => {
     const shuffleOn = get().shuffle;

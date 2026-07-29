@@ -11,7 +11,15 @@ function stripExtension(filename: string) {
   return filename.replace(/\.[^./]+$/, "");
 }
 
-export async function parseM4aFile(file: File): Promise<ParsedTrack> {
+/** Identifies a file by its bytes, so a rename still counts as the same track. */
+export async function hashFile(file: File): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", await file.arrayBuffer());
+  return Array.from(new Uint8Array(digest))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+export async function parseM4aFile(file: File, hash: string): Promise<ParsedTrack> {
   const id = crypto.randomUUID();
   const metadata = await parseBlob(file, { skipCovers: false }).catch(() => null);
 
@@ -29,6 +37,7 @@ export async function parseM4aFile(file: File): Promise<ParsedTrack> {
     dateAdded: Date.now(),
     fileKey: id,
     artKey: picture ? `${id}-art` : undefined,
+    hash,
   };
 
   const artBlob = picture
