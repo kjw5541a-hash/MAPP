@@ -17,6 +17,17 @@ npm run lint
 npm run build
 ```
 
+## 카카오톡 테마 만들기 (`/kakao/`)
+
+같은 저장소에 들어 있는 별도 페이지입니다(`kakao/index.html`, `src/kakao/`). 음악 플레이어와는 코드도 서비스 워커 캐시도 공유하지 않습니다.
+
+- 채팅방 · 친구 목록 미리보기를 보면서 색상 리소스를 편집합니다.
+- 채팅방/전체 배경 이미지를 올리면 업로드한 파일 그대로 테마에 담깁니다.
+- 편집 중인 내용은 IndexedDB에 남아 다음 방문 때 이어서 작업할 수 있습니다.
+- 내려받기를 누르면 `res/values/colors.xml`, 배경 drawable, `AndroidManifest.xml` 예시, 다시 불러올 수 있는 `theme.json`이 담긴 zip이 만들어집니다.
+
+브라우저에서는 APK 서명을 할 수 없어 설치 파일까지는 만들지 못합니다. 내려받은 리소스를 카카오톡 테마 템플릿 안드로이드 프로젝트에 넣고 Android Studio에서 빌드해야 합니다.
+
 ## 동작 방식
 
 - m4a 파일을 선택하면 [`music-metadata`](https://github.com/Borewit/music-metadata)로 태그(제목/아티스트/앨범/커버/가사)를 파싱합니다.

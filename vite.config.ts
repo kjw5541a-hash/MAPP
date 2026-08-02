@@ -1,4 +1,5 @@
 import { execSync } from 'node:child_process'
+import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
@@ -30,6 +31,16 @@ export default defineConfig({
   define: {
     __BUILD_ID__: JSON.stringify(buildId()),
   },
+  build: {
+    rollupOptions: {
+      input: {
+        main: fileURLToPath(new URL('index.html', import.meta.url)),
+        // Standalone page at /MAPP/kakao/ — shares the toolchain with the
+        // player, but nothing else.
+        kakao: fileURLToPath(new URL('kakao/index.html', import.meta.url)),
+      },
+    },
+  },
   plugins: [
     react(),
     tailwindcss(),
@@ -53,6 +64,10 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,png,svg,ico,webmanifest}'],
+        // The theme maker is a separate page; keep it out of the player's
+        // cache and let its own navigations reach the network.
+        globIgnores: ['**/kakao/**'],
+        navigateFallbackDenylist: [/^\/MAPP\/kakao\//],
         // Always answer navigations from the precached shell, so a network
         // error page can never replace the running app mid-playback.
         navigateFallback: `${base}index.html`,
