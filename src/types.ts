@@ -11,6 +11,7 @@ export interface Track {
   /** SHA-256 of the source file, used to skip re-imports. Absent on tracks
    *  imported before this existed. */
   hash?: string;
+  liked?: boolean;
 }
 
 export interface Playlist {
@@ -26,5 +27,4 @@ export type QueueSource =
   | { type: "songs" }
   | { type: "album"; album: string }
   | { type: "artist"; artist: string }
-  | { type: "playlist"; playlistId: string }
-  | { type: "search" };
+  | { type: "playlist"; playlistId: string };

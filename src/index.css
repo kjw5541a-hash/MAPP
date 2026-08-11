@@ -142,6 +142,16 @@
   box-sizing: border-box;
 }
 
+/* A long press on a row is meant to trigger our own gesture (select / drag /
+   reorder), not the browser's native text-selection callout — without this,
+   holding a finger on a title starts highlighting it instead. */
+.touch-row {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: pan-y;
+}
+
 /* The document itself must never scroll: on iOS a scrollable document lets a
    drag anywhere — including the header and tab bar — move the whole page. */
 html,

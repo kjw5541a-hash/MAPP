@@ -1,11 +1,11 @@
-import { ListMusic, Disc3, Music2, Search, Sparkles } from "lucide-react";
+import { ListMusic, Disc3, Music2, Heart, Sparkles } from "lucide-react";
 import { useUIStore, type Tab } from "../store/uiStore";
 
 const TABS: { id: Tab; label: string; icon: typeof ListMusic }[] = [
   { id: "playlists", label: "재생목록", icon: ListMusic },
   { id: "collection", label: "보관함", icon: Disc3 },
   { id: "songs", label: "곡", icon: Music2 },
-  { id: "search", label: "검색", icon: Search },
+  { id: "liked", label: "좋아요", icon: Heart },
   { id: "ai", label: "AI추천", icon: Sparkles },
 ];
 
@@ -26,7 +26,11 @@ export function TabBar() {
               active ? "nm-pressed text-nm-accent" : "text-nm-text-muted"
             }`}
           >
-            <Icon className="w-5.5 h-5.5" strokeWidth={active ? 2.4 : 2} />
+            <Icon
+              className="w-5.5 h-5.5"
+              strokeWidth={active ? 2.4 : 2}
+              fill={id === "liked" && active ? "currentColor" : "none"}
+            />
             <span className="text-[10px]">{label}</span>
           </button>
         );

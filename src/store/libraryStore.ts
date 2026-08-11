@@ -26,10 +26,12 @@ interface LibraryState {
   dismissImportResult: () => void;
   deleteTrack: (id: string) => Promise<void>;
   clearLibrary: () => Promise<void>;
+  toggleLiked: (id: string) => Promise<void>;
   createPlaylist: (name: string) => Promise<Playlist>;
   renamePlaylist: (id: string, name: string) => Promise<void>;
   deletePlaylist: (id: string) => Promise<void>;
   addToPlaylist: (playlistId: string, trackId: string) => Promise<void>;
+  addTracksToPlaylist: (playlistId: string, trackIds: string[]) => Promise<void>;
   removeFromPlaylist: (playlistId: string, trackId: string) => Promise<void>;
   reorderPlaylist: (playlistId: string, trackIds: string[]) => Promise<void>;
 }
@@ -106,6 +108,14 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
     set({ tracks: [], playlists: [], importResult: null });
   },
 
+  toggleLiked: async (id) => {
+    const track = get().tracks.find((t) => t.id === id);
+    if (!track) return;
+    const updated = { ...track, liked: !track.liked };
+    await db.updateTrackMeta(updated);
+    set((state) => ({ tracks: state.tracks.map((t) => (t.id === id ? updated : t)) }));
+  },
+
   createPlaylist: async (name) => {
     const playlist: Playlist = {
       id: crypto.randomUUID(),
@@ -135,6 +145,18 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
     const playlist = get().playlists.find((p) => p.id === playlistId);
     if (!playlist || playlist.trackIds.includes(trackId)) return;
     const updated = { ...playlist, trackIds: [...playlist.trackIds, trackId] };
+    await db.savePlaylist(updated);
+    set((state) => ({
+      playlists: state.playlists.map((p) => (p.id === playlistId ? updated : p)),
+    }));
+  },
+
+  addTracksToPlaylist: async (playlistId, trackIds) => {
+    const playlist = get().playlists.find((p) => p.id === playlistId);
+    if (!playlist) return;
+    const additions = trackIds.filter((id) => !playlist.trackIds.includes(id));
+    if (additions.length === 0) return;
+    const updated = { ...playlist, trackIds: [...playlist.trackIds, ...additions] };
     await db.savePlaylist(updated);
     set((state) => ({
       playlists: state.playlists.map((p) => (p.id === playlistId ? updated : p)),

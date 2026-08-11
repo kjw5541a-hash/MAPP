@@ -50,6 +50,12 @@ export async function getTrackArt(artKey: string): Promise<Blob | undefined> {
   return db.get("trackArt", artKey);
 }
 
+/** Metadata-only write (e.g. the liked flag) — leaves the audio/art blobs untouched. */
+export async function updateTrackMeta(track: Track) {
+  const db = await getDB();
+  await db.put("tracks", track);
+}
+
 export async function deleteTrack(track: Track) {
   const db = await getDB();
   const tx = db.transaction(["tracks", "trackFiles", "trackArt"], "readwrite");

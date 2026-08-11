@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-export type Tab = "playlists" | "collection" | "songs" | "search" | "ai";
+export type Tab = "playlists" | "collection" | "songs" | "liked" | "ai";
 export type CollectionMode = "albums" | "artists";
 
 export type Detail =

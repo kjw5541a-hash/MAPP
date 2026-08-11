@@ -1,8 +1,9 @@
-import { Play } from "lucide-react";
+import { Play, Heart } from "lucide-react";
 import type { Track } from "../types";
 import { CoverArt } from "./CoverArt";
 import { TrackMenu } from "./TrackMenu";
 import { formatDuration } from "../lib/format";
+import { useLibraryStore } from "../store/libraryStore";
 
 interface TrackRowProps {
   track: Track;
@@ -11,9 +12,19 @@ interface TrackRowProps {
   showAlbum?: boolean;
   index?: number;
   playlistIdContext?: string;
+  showLike?: boolean;
 }
 
-export function TrackRow({ track, onPlay, isActive, showAlbum, index, playlistIdContext }: TrackRowProps) {
+export function TrackRow({
+  track,
+  onPlay,
+  isActive,
+  showAlbum,
+  index,
+  playlistIdContext,
+  showLike,
+}: TrackRowProps) {
+  const toggleLiked = useLibraryStore((s) => s.toggleLiked);
   return (
     <div
       role="button"
@@ -35,6 +46,21 @@ export function TrackRow({ track, onPlay, isActive, showAlbum, index, playlistId
           {showAlbum ? ` · ${track.album}` : ""}
         </p>
       </div>
+      {showLike && (
+        <button
+          type="button"
+          aria-label={track.liked ? "좋아요 취소" : "좋아요"}
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleLiked(track.id);
+          }}
+          className="shrink-0 p-1 -m-1"
+        >
+          <Heart
+            className={`w-4 h-4 ${track.liked ? "fill-nm-accent text-nm-accent" : "text-nm-text-muted"}`}
+          />
+        </button>
+      )}
       <span className="text-[13px] text-nm-text-muted shrink-0 tabular-nums">
         {formatDuration(track.duration)}
       </span>
