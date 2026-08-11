@@ -52,7 +52,7 @@ export function SwipeRow({
   return (
     <div
       ref={ref as React.RefObject<HTMLDivElement>}
-      className={`relative overflow-hidden rounded-2xl touch-row ${className}`}
+      className={`relative overflow-hidden rounded-2xl touch-row shrink-0 ${className}`}
       style={{
         zIndex: active ? 10 : undefined,
         transform: ty ? `translateY(${ty}px)` : undefined,
