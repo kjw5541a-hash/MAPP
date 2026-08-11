@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Search, ListPlus, X } from "lucide-react";
 import { useLibraryStore } from "../../store/libraryStore";
 import { usePlayerStore } from "../../store/playerStore";
@@ -9,6 +9,10 @@ import { EmptyLibrary } from "./EmptyLibrary";
 import { ConfirmDialog } from "../ConfirmDialog";
 import { PlaylistPickerModal } from "../Playlists/PlaylistPickerModal";
 import type { Track } from "../../types";
+
+const ROW_GAP = 4; // px — matches the previous list's gap-1
+const ROW_ESTIMATE = 64; // fallback row step (content + gap) before the first row is measured
+const OVERSCAN = 8; // extra rows kept mounted above/below the viewport
 
 export function SongsList() {
   const tracks = useLibraryStore((s) => s.tracks);
@@ -29,6 +33,43 @@ export function SongsList() {
     () => (query.trim() ? searchTracks(tracks, query) : tracks),
     [tracks, query],
   );
+
+  // Only the rows near the viewport are mounted, so a large library doesn't
+  // keep hundreds of swipe-gesture touch listeners live at once — that was
+  // what made scrolling this specific list feel janky.
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [rowStep, setRowStep] = useState(ROW_ESTIMATE);
+  const [scrollTop, setScrollTop] = useState(0);
+  const [viewportH, setViewportH] = useState(0);
+  const rafId = useRef<number | null>(null);
+
+  useLayoutEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setViewportH(el.clientHeight);
+    const ro = new ResizeObserver(() => setViewportH(el.clientHeight));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  const measureRow = useCallback((el: HTMLDivElement | null) => {
+    if (!el) return;
+    const h = Math.round(el.getBoundingClientRect().height) + ROW_GAP;
+    setRowStep((prev) => (prev === h ? prev : h));
+  }, []);
+
+  const handleScroll = useCallback(() => {
+    if (rafId.current !== null) return;
+    rafId.current = requestAnimationFrame(() => {
+      rafId.current = null;
+      if (scrollRef.current) setScrollTop(scrollRef.current.scrollTop);
+    });
+  }, []);
+
+  const total = filtered.length;
+  const startIndex = Math.max(0, Math.floor(scrollTop / rowStep) - OVERSCAN);
+  const endIndex = Math.min(total, Math.ceil((scrollTop + viewportH) / rowStep) + OVERSCAN);
+  const visible = filtered.slice(startIndex, endIndex);
 
   if (tracks.length === 0) return <EmptyLibrary />;
 
@@ -65,23 +106,37 @@ export function SongsList() {
         </button>
       </div>
 
-      <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain nm-scrollbar-none px-4 pb-4 flex flex-col gap-1">
-        {filtered.length === 0 ? (
+      <div
+        ref={scrollRef}
+        onScroll={handleScroll}
+        className="flex-1 min-h-0 overflow-y-auto overscroll-contain nm-scrollbar-none px-4 pb-4"
+      >
+        {total === 0 ? (
           <p className="text-center text-sm text-nm-text-muted py-10">검색 결과가 없습니다.</p>
         ) : (
-          filtered.map((track, i) => (
-            <SongRow
-              key={track.id}
-              track={track}
-              isActive={track.id === currentTrackId}
-              selectMode={selectMode}
-              selected={selected.has(track.id)}
-              onPlay={() => playQueue(filtered, i, { type: "songs" })}
-              onLongPress={() => !selectMode && enterSelect(track.id)}
-              onToggleSelect={() => toggleSelect(track.id)}
-              onDeleteRequest={() => setPendingDelete(track)}
-            />
-          ))
+          <div style={{ position: "relative", height: total * rowStep - ROW_GAP }}>
+            {visible.map((track, i) => {
+              const index = startIndex + i;
+              return (
+                <div
+                  key={track.id}
+                  ref={index === startIndex ? measureRow : undefined}
+                  style={{ position: "absolute", top: index * rowStep, left: 0, right: 0 }}
+                >
+                  <SongRow
+                    track={track}
+                    isActive={track.id === currentTrackId}
+                    selectMode={selectMode}
+                    selected={selected.has(track.id)}
+                    onPlay={() => playQueue(filtered, index, { type: "songs" })}
+                    onLongPress={() => !selectMode && enterSelect(track.id)}
+                    onToggleSelect={() => toggleSelect(track.id)}
+                    onDeleteRequest={() => setPendingDelete(track)}
+                  />
+                </div>
+              );
+            })}
+          </div>
         )}
       </div>
 
