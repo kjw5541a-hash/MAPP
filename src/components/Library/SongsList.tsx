@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Search, ListPlus } from "lucide-react";
+import { Search, ListPlus, X } from "lucide-react";
 import { useLibraryStore } from "../../store/libraryStore";
 import { usePlayerStore } from "../../store/playerStore";
 import { useSongSelectionStore } from "../../store/songSelectionStore";
@@ -43,6 +43,16 @@ export function SongsList() {
             placeholder="제목, 아티스트, 앨범 검색"
             className="flex-1 bg-transparent outline-none placeholder:text-nm-text-muted text-[15px] min-w-0"
           />
+          {query && (
+            <button
+              type="button"
+              aria-label="검색어 지우기"
+              onClick={() => setQuery("")}
+              className="shrink-0 w-4 h-4 rounded-full flex items-center justify-center text-nm-text-muted"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
         </div>
         <button
           type="button"
