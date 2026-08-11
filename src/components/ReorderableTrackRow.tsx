@@ -1,13 +1,14 @@
 import { Play, Heart, GripVertical } from "lucide-react";
-import type { Track } from "../../types";
-import { CoverArt } from "../CoverArt";
-import { SwipeRow } from "../SwipeRow";
-import { formatDuration } from "../../lib/format";
-import { useLibraryStore } from "../../store/libraryStore";
+import type { Track } from "../types";
+import { CoverArt } from "./CoverArt";
+import { SwipeRow } from "./SwipeRow";
+import { formatDuration } from "../lib/format";
+import { useLibraryStore } from "../store/libraryStore";
 
-interface PlaylistTrackRowProps {
+interface ReorderableTrackRowProps {
   track: Track;
   isActive: boolean;
+  deleteLabel: string;
   translateY: number;
   elevated: boolean;
   onTap: () => void;
@@ -17,9 +18,12 @@ interface PlaylistTrackRowProps {
   onDragEnd: () => void;
 }
 
-export function PlaylistTrackRow({
+/** A track row that supports swipe-to-remove and long-press-drag reorder —
+ *  shared by the playlist detail list and the liked-songs list. */
+export function ReorderableTrackRow({
   track,
   isActive,
+  deleteLabel,
   translateY,
   elevated,
   onTap,
@@ -27,14 +31,14 @@ export function PlaylistTrackRow({
   onDragStart,
   onDragMove,
   onDragEnd,
-}: PlaylistTrackRowProps) {
+}: ReorderableTrackRowProps) {
   const toggleLiked = useLibraryStore((s) => s.toggleLiked);
 
   return (
     <SwipeRow
       onTap={onTap}
       onDeleteRequest={onDeleteRequest}
-      deleteLabel="재생목록에서 삭제"
+      deleteLabel={deleteLabel}
       onDragStart={onDragStart}
       onDragMove={onDragMove}
       onDragEnd={onDragEnd}
@@ -58,6 +62,7 @@ export function PlaylistTrackRow({
         <button
           type="button"
           aria-label={track.liked ? "좋아요 취소" : "좋아요"}
+          data-swipe-ignore
           onClick={(e) => {
             e.stopPropagation();
             toggleLiked(track.id);

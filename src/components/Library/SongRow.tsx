@@ -54,6 +54,7 @@ export function SongRow({
         <button
           type="button"
           aria-label={track.liked ? "좋아요 취소" : "좋아요"}
+          data-swipe-ignore
           onClick={(e) => {
             e.stopPropagation();
             toggleLiked(track.id);

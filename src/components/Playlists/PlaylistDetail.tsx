@@ -1,23 +1,15 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { Play, Shuffle, Trash2, Plus } from "lucide-react";
 import { useLibraryStore } from "../../store/libraryStore";
 import { useUIStore } from "../../store/uiStore";
 import { usePlayerStore } from "../../store/playerStore";
+import { useDragReorder } from "../../hooks/useDragReorder";
 import { BackHeader } from "../BackHeader";
 import { CoverArt } from "../CoverArt";
 import { ConfirmDialog } from "../ConfirmDialog";
-import { PlaylistTrackRow } from "./PlaylistTrackRow";
+import { ReorderableTrackRow } from "../ReorderableTrackRow";
 import { TrackPickerModal } from "./TrackPickerModal";
 import type { Track } from "../../types";
-
-const ROW_GAP = 4; // px — matches the list's gap-1
-
-function arrayMove<T>(arr: T[], from: number, to: number): T[] {
-  const next = [...arr];
-  const [item] = next.splice(from, 1);
-  next.splice(to, 0, item);
-  return next;
-}
 
 export function PlaylistDetail({ playlistId }: { playlistId: string }) {
   const playlist = useLibraryStore((s) => s.playlists.find((p) => p.id === playlistId));
@@ -34,57 +26,14 @@ export function PlaylistDetail({ playlistId }: { playlistId: string }) {
   const [pendingRemove, setPendingRemove] = useState<Track | null>(null);
   const [showTrackPicker, setShowTrackPicker] = useState(false);
 
-  // Live-reordered copy of the id list while a drag is in progress; the
-  // playlist's own order is only touched once, on release.
-  const [workingIds, setWorkingIds] = useState<string[] | null>(null);
-  const [draggingId, setDraggingId] = useState<string | null>(null);
-  const [dragOffsetY, setDragOffsetY] = useState(0);
-
-  const rowHeight = useRef(0);
-  const originalIndex = useRef(0);
-  const currentIndex = useRef(0);
-  const rowRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const { orderedIds, draggingId, dragOffsetY, rowRefs, startDrag, moveDrag, endDrag } =
+    useDragReorder(playlist?.trackIds ?? [], (ids) => reorderPlaylist(playlistId, ids));
 
   if (!playlist) return null;
 
-  const orderedIds = workingIds ?? playlist.trackIds;
   const tracks = orderedIds
     .map((id) => allTracks.find((t) => t.id === id))
     .filter((t): t is Track => Boolean(t));
-
-  const startDrag = (trackId: string, index: number) => {
-    const el = rowRefs.current[trackId];
-    rowHeight.current = (el?.getBoundingClientRect().height ?? 60) + ROW_GAP;
-    originalIndex.current = index;
-    currentIndex.current = index;
-    setWorkingIds(playlist.trackIds);
-    setDraggingId(trackId);
-  };
-
-  const moveDrag = (trackId: string, deltaY: number) => {
-    const step = rowHeight.current || 60;
-    const rawSteps = Math.round(deltaY / step);
-    const len = playlist.trackIds.length;
-    const targetIndex = Math.max(0, Math.min(len - 1, originalIndex.current + rawSteps));
-    const appliedSteps = targetIndex - originalIndex.current;
-    setDragOffsetY(deltaY - appliedSteps * step);
-
-    if (targetIndex !== currentIndex.current) {
-      setWorkingIds((prev) => {
-        if (!prev) return prev;
-        const from = prev.indexOf(trackId);
-        return arrayMove(prev, from, targetIndex);
-      });
-      currentIndex.current = targetIndex;
-    }
-  };
-
-  const endDrag = () => {
-    if (workingIds) reorderPlaylist(playlistId, workingIds);
-    setWorkingIds(null);
-    setDraggingId(null);
-    setDragOffsetY(0);
-  };
 
   const confirmDeletePlaylistNow = () => {
     deletePlaylist(playlistId);
@@ -151,9 +100,10 @@ export function PlaylistDetail({ playlistId }: { playlistId: string }) {
           <div className="flex flex-col gap-1 mt-2">
             {tracks.map((track, i) => (
               <div key={track.id} ref={(el) => { rowRefs.current[track.id] = el; }}>
-                <PlaylistTrackRow
+                <ReorderableTrackRow
                   track={track}
                   isActive={track.id === currentTrackId}
+                  deleteLabel="재생목록에서 삭제"
                   translateY={draggingId === track.id ? dragOffsetY : 0}
                   elevated={draggingId === track.id}
                   onTap={() => playQueue(tracks, i, { type: "playlist", playlistId })}

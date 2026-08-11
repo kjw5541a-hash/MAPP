@@ -12,6 +12,8 @@ export interface Track {
    *  imported before this existed. */
   hash?: string;
   liked?: boolean;
+  /** Manual sort key within the liked list, set when a track is liked. */
+  likeOrder?: number;
 }
 
 export interface Playlist {

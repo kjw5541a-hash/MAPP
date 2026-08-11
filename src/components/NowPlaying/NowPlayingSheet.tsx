@@ -1,6 +1,7 @@
 import { useRef } from "react";
-import { ChevronDown, AlignLeft, Disc3 } from "lucide-react";
+import { ChevronDown, AlignLeft, Disc3, Heart } from "lucide-react";
 import { usePlayerStore } from "../../store/playerStore";
+import { useLibraryStore } from "../../store/libraryStore";
 import { CoverArt } from "../CoverArt";
 import { ProgressBar } from "./ProgressBar";
 import { Controls } from "./Controls";
@@ -12,6 +13,11 @@ export function NowPlayingSheet() {
   const showLyrics = usePlayerStore((s) => s.showLyrics);
   const setShowNowPlaying = usePlayerStore((s) => s.setShowNowPlaying);
   const setShowLyrics = usePlayerStore((s) => s.setShowLyrics);
+  const toggleLiked = useLibraryStore((s) => s.toggleLiked);
+  // playerStore's queue holds a snapshot of the track taken when playback
+  // started, so its `liked` field goes stale the moment it's toggled
+  // elsewhere; look the live value up from the library instead.
+  const liked = useLibraryStore((s) => (currentTrack ? s.tracks.find((t) => t.id === currentTrack.id)?.liked : undefined));
 
   const touchStartY = useRef<number | null>(null);
 
@@ -82,6 +88,16 @@ export function NowPlayingSheet() {
 
       <div className="w-full max-w-sm mx-auto px-4 pb-6 pt-2 shrink-0">
         <Controls />
+        <div className="flex justify-end px-2 mt-3">
+          <button
+            type="button"
+            aria-label={liked ? "좋아요 취소" : "좋아요"}
+            onClick={() => toggleLiked(currentTrack.id)}
+            className="w-11 h-11 rounded-full flex items-center justify-center"
+          >
+            <Heart className={`w-4.5 h-4.5 ${liked ? "fill-nm-accent text-nm-accent" : "text-nm-text-muted"}`} />
+          </button>
+        </div>
       </div>
     </div>
   );

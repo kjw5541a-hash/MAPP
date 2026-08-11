@@ -27,6 +27,7 @@ interface LibraryState {
   deleteTrack: (id: string) => Promise<void>;
   clearLibrary: () => Promise<void>;
   toggleLiked: (id: string) => Promise<void>;
+  reorderLiked: (trackIds: string[]) => Promise<void>;
   createPlaylist: (name: string) => Promise<Playlist>;
   renamePlaylist: (id: string, name: string) => Promise<void>;
   deletePlaylist: (id: string) => Promise<void>;
@@ -111,9 +112,22 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
   toggleLiked: async (id) => {
     const track = get().tracks.find((t) => t.id === id);
     if (!track) return;
-    const updated = { ...track, liked: !track.liked };
+    const liked = !track.liked;
+    const updated: Track = { ...track, liked, likeOrder: liked ? Date.now() : track.likeOrder };
     await db.updateTrackMeta(updated);
     set((state) => ({ tracks: state.tracks.map((t) => (t.id === id ? updated : t)) }));
+  },
+
+  reorderLiked: async (trackIds) => {
+    const updates: Track[] = [];
+    trackIds.forEach((id, i) => {
+      const track = get().tracks.find((t) => t.id === id);
+      if (track) updates.push({ ...track, likeOrder: i });
+    });
+    await Promise.all(updates.map((t) => db.updateTrackMeta(t)));
+    set((state) => ({
+      tracks: state.tracks.map((t) => updates.find((u) => u.id === t.id) ?? t),
+    }));
   },
 
   createPlaylist: async (name) => {
