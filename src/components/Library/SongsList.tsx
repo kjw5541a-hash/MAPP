@@ -1,9 +1,9 @@
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { Search, ListPlus, X } from "lucide-react";
+import { Search, ListPlus, ArrowUpDown, X } from "lucide-react";
 import { useLibraryStore } from "../../store/libraryStore";
 import { usePlayerStore } from "../../store/playerStore";
 import { useSongSelectionStore } from "../../store/songSelectionStore";
-import { searchTracks } from "../../lib/derive";
+import { searchTracks, sortTracks, type SongSort } from "../../lib/derive";
 import { SongRow } from "./SongRow";
 import { EmptyLibrary } from "./EmptyLibrary";
 import { ConfirmDialog } from "../ConfirmDialog";
@@ -13,6 +13,9 @@ import type { Track } from "../../types";
 const ROW_GAP = 4; // px — matches the previous list's gap-1
 const ROW_ESTIMATE = 64; // fallback row step (content + gap) before the first row is measured
 const OVERSCAN = 8; // extra rows kept mounted above/below the viewport
+
+const SORT_CYCLE: SongSort[] = ["default", "title", "artist"];
+const SORT_LABEL: Record<SongSort, string> = { default: "기본", title: "제목순", artist: "아티스트순" };
 
 export function SongsList() {
   const tracks = useLibraryStore((s) => s.tracks);
@@ -26,12 +29,13 @@ export function SongsList() {
   const toggleSelect = useSongSelectionStore((s) => s.toggle);
 
   const [query, setQuery] = useState("");
+  const [sort, setSort] = useState<SongSort>("default");
   const [pendingDelete, setPendingDelete] = useState<Track | null>(null);
   const [showPlaylistPicker, setShowPlaylistPicker] = useState(false);
 
   const filtered = useMemo(
-    () => (query.trim() ? searchTracks(tracks, query) : tracks),
-    [tracks, query],
+    () => sortTracks(query.trim() ? searchTracks(tracks, query) : tracks, sort),
+    [tracks, query, sort],
   );
 
   // Only the rows near the viewport are mounted, so a large library doesn't
@@ -95,6 +99,15 @@ export function SongsList() {
             </button>
           )}
         </div>
+        <button
+          type="button"
+          aria-label={`정렬: ${SORT_LABEL[sort]}`}
+          onClick={() => setSort(SORT_CYCLE[(SORT_CYCLE.indexOf(sort) + 1) % SORT_CYCLE.length])}
+          className="h-10 px-3 rounded-full nm-flat flex items-center gap-1 shrink-0 text-nm-accent text-xs whitespace-nowrap"
+        >
+          <ArrowUpDown className="w-4 h-4" />
+          {SORT_LABEL[sort]}
+        </button>
         <button
           type="button"
           aria-label="재생목록에 추가"

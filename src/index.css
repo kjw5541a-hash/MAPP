@@ -142,13 +142,25 @@
   box-sizing: border-box;
 }
 
-/* A long press on a row is meant to trigger our own gesture (select / drag /
-   reorder), not the browser's native text-selection callout — without this,
-   holding a finger on a title starts highlighting it instead. */
-.touch-row {
+/* A long press anywhere in the app is meant to trigger our own gestures
+   (select / drag / reorder) or just be a tap-and-hold, not the browser's
+   native text-selection callout. Inputs opt back in since typing needs it. */
+body {
   -webkit-touch-callout: none;
   -webkit-user-select: none;
   user-select: none;
+}
+
+input,
+textarea {
+  -webkit-touch-callout: default;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* Rows additionally restrict touch to vertical scrolling so a long-press-drag
+   doesn't fight the browser's own pan/zoom handling. */
+.touch-row {
   touch-action: pan-y;
 }
 

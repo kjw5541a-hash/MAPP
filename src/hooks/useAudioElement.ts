@@ -108,6 +108,10 @@ export function useAudioElement() {
       navigator.mediaSession.setActionHandler("seekto", (details) => {
         if (details.seekTime !== undefined) seek(details.seekTime);
       });
+      // Without explicitly nulling these, iOS defaults to showing the 10s
+      // skip buttons instead of the previoustrack/nexttrack ones above.
+      navigator.mediaSession.setActionHandler("seekforward", null);
+      navigator.mediaSession.setActionHandler("seekbackward", null);
     }
 
     return () => {

@@ -1,6 +1,22 @@
 import { create } from "zustand";
 import type { Track, RepeatMode, QueueSource } from "../types";
 
+const SHUFFLE_STORAGE = "mapp-shuffle";
+const REPEAT_STORAGE = "mapp-repeat";
+
+function isRepeatMode(value: string | null): value is RepeatMode {
+  return value === "off" || value === "all" || value === "one";
+}
+
+function initialShuffle(): boolean {
+  return localStorage.getItem(SHUFFLE_STORAGE) === "true";
+}
+
+function initialRepeat(): RepeatMode {
+  const saved = localStorage.getItem(REPEAT_STORAGE);
+  return isRepeatMode(saved) ? saved : "off";
+}
+
 function shuffleIndices(indices: number[]): number[] {
   const out = [...indices];
   for (let i = out.length - 1; i > 0; i--) {
@@ -61,8 +77,8 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   playOrder: [],
   orderPos: 0,
   isPlaying: false,
-  shuffle: false,
-  repeat: "off",
+  shuffle: initialShuffle(),
+  repeat: initialRepeat(),
   progress: 0,
   duration: 0,
   seekRequest: null,
@@ -102,6 +118,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   },
 
   playShuffled: (tracks, source) => {
+    localStorage.setItem(SHUFFLE_STORAGE, "true");
     set({
       queue: tracks,
       playOrder: fullShuffledOrder(tracks.length),
@@ -154,9 +171,11 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     const currentQueueIndex = playOrder[orderPos];
     if (!shuffle) {
       const newOrder = shuffledOrder(queue.length, currentQueueIndex ?? 0);
+      localStorage.setItem(SHUFFLE_STORAGE, "true");
       set({ shuffle: true, playOrder: newOrder, orderPos: 0 });
     } else {
       const newOrder = queue.map((_, i) => i);
+      localStorage.setItem(SHUFFLE_STORAGE, "false");
       set({ shuffle: false, playOrder: newOrder, orderPos: currentQueueIndex ?? 0 });
     }
   },
@@ -164,6 +183,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   cycleRepeat: () => {
     const order: RepeatMode[] = ["off", "all", "one"];
     const next = order[(order.indexOf(get().repeat) + 1) % order.length];
+    localStorage.setItem(REPEAT_STORAGE, next);
     set({ repeat: next });
   },
 
