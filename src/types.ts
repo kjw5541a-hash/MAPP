@@ -21,6 +21,8 @@ export interface Playlist {
   name: string;
   trackIds: string[];
   dateCreated: number;
+  /** Manual sort key for the playlists list, reassigned on drag reorder. */
+  order: number;
 }
 
 export type RepeatMode = "off" | "all" | "one";

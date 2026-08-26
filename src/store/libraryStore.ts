@@ -35,6 +35,7 @@ interface LibraryState {
   addTracksToPlaylist: (playlistId: string, trackIds: string[]) => Promise<void>;
   removeFromPlaylist: (playlistId: string, trackId: string) => Promise<void>;
   reorderPlaylist: (playlistId: string, trackIds: string[]) => Promise<void>;
+  reorderPlaylists: (playlistIds: string[]) => Promise<void>;
 }
 
 export const useLibraryStore = create<LibraryState>((set, get) => ({
@@ -47,6 +48,9 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
   init: async () => {
     const [tracks, playlists] = await Promise.all([db.getAllTracks(), db.getAllPlaylists()]);
     tracks.sort((a, b) => a.title.localeCompare(b.title));
+    // Playlists saved before manual ordering existed have no `order` — fall
+    // back to creation time so they still come out in a stable sequence.
+    playlists.sort((a, b) => (a.order ?? a.dateCreated) - (b.order ?? b.dateCreated));
     set({ tracks, playlists, ready: true });
   },
 
@@ -136,6 +140,7 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
       name,
       trackIds: [],
       dateCreated: Date.now(),
+      order: Date.now(),
     };
     await db.savePlaylist(playlist);
     set((state) => ({ playlists: [...state.playlists, playlist] }));
@@ -195,5 +200,17 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
     set((state) => ({
       playlists: state.playlists.map((p) => (p.id === playlistId ? updated : p)),
     }));
+  },
+
+  reorderPlaylists: async (playlistIds) => {
+    const byId = new Map(get().playlists.map((p) => [p.id, p]));
+    const updated = playlistIds
+      .map((id, order) => {
+        const playlist = byId.get(id);
+        return playlist ? { ...playlist, order } : null;
+      })
+      .filter((p): p is Playlist => p !== null);
+    await Promise.all(updated.map((p) => db.savePlaylist(p)));
+    set({ playlists: updated });
   },
 }));
