@@ -108,10 +108,13 @@ export function useAudioElement() {
       navigator.mediaSession.setActionHandler("seekto", (details) => {
         if (details.seekTime !== undefined) seek(details.seekTime);
       });
-      // Without explicitly nulling these, iOS defaults to showing the 10s
-      // skip buttons instead of the previoustrack/nexttrack ones above.
-      navigator.mediaSession.setActionHandler("seekforward", null);
-      navigator.mediaSession.setActionHandler("seekbackward", null);
+      // iOS is a known WebKit bug (webkit.org/b/229068): it keeps showing the
+      // 10s skip icons on the lock screen regardless of previoustrack/nexttrack
+      // being registered. Nulling seekforward/seekbackward doesn't remove the
+      // icons either, so instead we wire them to next/prev — the icon stays
+      // wrong but tapping it actually changes track.
+      navigator.mediaSession.setActionHandler("seekforward", () => next());
+      navigator.mediaSession.setActionHandler("seekbackward", () => prev());
     }
 
     return () => {
