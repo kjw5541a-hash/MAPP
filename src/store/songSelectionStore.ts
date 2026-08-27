@@ -7,6 +7,7 @@ interface SongSelectionState {
   active: boolean;
   selected: Set<string>;
   enter: (firstId: string) => void;
+  enterEmpty: () => void;
   toggle: (id: string) => void;
   clear: () => void;
 }
@@ -16,6 +17,7 @@ export const useSongSelectionStore = create<SongSelectionState>((set) => ({
   selected: new Set(),
 
   enter: (firstId) => set({ active: true, selected: new Set([firstId]) }),
+  enterEmpty: () => set({ active: true, selected: new Set() }),
 
   toggle: (id) =>
     set((state) => {

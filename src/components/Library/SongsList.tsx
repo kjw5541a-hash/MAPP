@@ -1,4 +1,4 @@
-import { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Search, ListPlus, ArrowUpDown, X } from "lucide-react";
 import { useLibraryStore } from "../../store/libraryStore";
 import { usePlayerStore } from "../../store/playerStore";
@@ -8,35 +8,47 @@ import { SongRow } from "./SongRow";
 import { EmptyLibrary } from "./EmptyLibrary";
 import { ConfirmDialog } from "../ConfirmDialog";
 import { PlaylistPickerModal } from "../Playlists/PlaylistPickerModal";
+import { NewPlaylistModal } from "../Playlists/NewPlaylistModal";
 import type { Track } from "../../types";
 
 const ROW_GAP = 4; // px — matches the previous list's gap-1
 const ROW_ESTIMATE = 64; // fallback row step (content + gap) before the first row is measured
 const OVERSCAN = 8; // extra rows kept mounted above/below the viewport
 
-const SORT_CYCLE: SongSort[] = ["default", "title", "artist"];
-const SORT_LABEL: Record<SongSort, string> = { default: "기본", title: "제목순", artist: "아티스트순" };
+const SORT_CYCLE: SongSort[] = ["title", "artist"];
+const SORT_LABEL: Record<SongSort, string> = { title: "제목순", artist: "아티스트순" };
 
 export function SongsList() {
   const tracks = useLibraryStore((s) => s.tracks);
   const deleteTrack = useLibraryStore((s) => s.deleteTrack);
+  const addTracksToPlaylist = useLibraryStore((s) => s.addTracksToPlaylist);
   const playQueue = usePlayerStore((s) => s.playQueue);
   const currentTrackId = usePlayerStore((s) => s.currentTrack()?.id);
 
   const selectMode = useSongSelectionStore((s) => s.active);
   const selected = useSongSelectionStore((s) => s.selected);
   const enterSelect = useSongSelectionStore((s) => s.enter);
+  const enterSelectEmpty = useSongSelectionStore((s) => s.enterEmpty);
   const toggleSelect = useSongSelectionStore((s) => s.toggle);
+  const clearSelection = useSongSelectionStore((s) => s.clear);
 
   const [query, setQuery] = useState("");
-  const [sort, setSort] = useState<SongSort>("default");
+  const [sort, setSort] = useState<SongSort>("title");
   const [pendingDelete, setPendingDelete] = useState<Track | null>(null);
   const [showPlaylistPicker, setShowPlaylistPicker] = useState(false);
+  const [showNewPlaylist, setShowNewPlaylist] = useState(false);
+  const [newPlaylistTarget, setNewPlaylistTarget] = useState<string | null>(null);
 
   const filtered = useMemo(
     () => sortTracks(query.trim() ? searchTracks(tracks, query) : tracks, sort),
     [tracks, query, sort],
   );
+
+  // Cancelling selection (e.g. the shared header's "취소" button) clears the
+  // store's active flag directly, so this local target needs to follow it.
+  useEffect(() => {
+    if (!selectMode) setNewPlaylistTarget(null);
+  }, [selectMode]);
 
   // Only the rows near the viewport are mounted, so a large library doesn't
   // keep hundreds of swipe-gesture touch listeners live at once — that was
@@ -110,9 +122,18 @@ export function SongsList() {
         </button>
         <button
           type="button"
-          aria-label="재생목록에 추가"
-          disabled={selected.size === 0}
-          onClick={() => setShowPlaylistPicker(true)}
+          aria-label={newPlaylistTarget ? "선택한 곡 추가 완료" : "재생목록에 추가"}
+          disabled={selectMode && selected.size === 0}
+          onClick={() => {
+            if (newPlaylistTarget) {
+              addTracksToPlaylist(newPlaylistTarget, [...selected]);
+              clearSelection();
+            } else if (selectMode) {
+              setShowPlaylistPicker(true);
+            } else {
+              setShowNewPlaylist(true);
+            }
+          }}
           className="w-10 h-10 rounded-full nm-flat flex items-center justify-center shrink-0 text-nm-accent disabled:text-nm-text-muted disabled:opacity-40"
         >
           <ListPlus className="w-5 h-5" />
@@ -169,6 +190,17 @@ export function SongsList() {
         <PlaylistPickerModal
           trackIds={[...selected]}
           onClose={() => setShowPlaylistPicker(false)}
+        />
+      )}
+
+      {showNewPlaylist && (
+        <NewPlaylistModal
+          onClose={() => setShowNewPlaylist(false)}
+          onCreated={(playlistId) => {
+            setShowNewPlaylist(false);
+            setNewPlaylistTarget(playlistId);
+            enterSelectEmpty();
+          }}
         />
       )}
     </div>
