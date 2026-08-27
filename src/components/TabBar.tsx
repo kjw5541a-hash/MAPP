@@ -14,7 +14,7 @@ export function TabBar() {
   const setTab = useUIStore((s) => s.setTab);
 
   return (
-    <nav className="flex justify-around px-2 pt-2 nm-flat safe-bottom">
+    <nav className="flex justify-around px-2 pt-2 nm-flat tabbar-safe-bottom">
       {TABS.map(({ id, label, icon: Icon }) => {
         const active = tab === id;
         return (

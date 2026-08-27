@@ -233,6 +233,12 @@ body {
   padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 0.5rem);
 }
 
+/* Tab bar only needs a sliver of clearance from the home indicator, not the
+   full safe-area inset, so it can sit lower and use more of the screen. */
+.tabbar-safe-bottom {
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) * 0.35 + 4px);
+}
+
 /* Neumorphic range input (progress / seek bar) */
 .nm-progress {
   -webkit-appearance: none;
