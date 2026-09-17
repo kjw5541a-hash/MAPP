@@ -53,6 +53,9 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,png,svg,ico,webmanifest}'],
+        // The theme maker is a separate app published under this scope; let
+        // its navigations reach the network instead of the player's shell.
+        navigateFallbackDenylist: [/^\/MAPP\/kakao\//],
         // Always answer navigations from the precached shell, so a network
         // error page can never replace the running app mid-playback.
         navigateFallback: `${base}index.html`,

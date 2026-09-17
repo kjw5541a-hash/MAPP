@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'projects/music/**'
+      - 'projects/kakaotalk-theme/**'
       - '.github/workflows/deploy-pages.yml'
   workflow_dispatch:
 
@@ -20,18 +21,25 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: projects/music
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: projects/music/package-lock.json
+          cache-dependency-path: |
+            projects/music/package-lock.json
+            projects/kakaotalk-theme/package-lock.json
       - run: npm ci
+        working-directory: projects/music
       - run: npm run build
+        working-directory: projects/music
+      - run: npm ci
+        working-directory: projects/kakaotalk-theme
+      - run: npm run build
+        working-directory: projects/kakaotalk-theme
+      # One Pages site: the player at /MAPP/, the theme maker at /MAPP/kakao/.
+      - run: mv projects/kakaotalk-theme/dist projects/music/dist/kakao
       - uses: actions/upload-pages-artifact@v3
         with:
           path: projects/music/dist

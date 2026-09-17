@@ -5,5 +5,6 @@
 | 프로젝트 | 설명 |
 | --- | --- |
 | [`projects/music`](projects/music) | 로컬 m4a 파일을 재생하는 웹 음악 플레이어 (GitHub Pages 배포) |
+| [`projects/kakaotalk-theme`](projects/kakaotalk-theme) | 카카오톡 테마 리소스 편집기 (GitHub Pages `/kakao/` 배포) |
 
 저장소 루트의 `CLAUDE.md`는 모든 프로젝트에 공통으로 적용되는 작업 가이드라인입니다.
