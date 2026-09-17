@@ -2,7 +2,10 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [claude/music-player-app-4w42ks]
+    branches: [main]
+    paths:
+      - 'projects/music/**'
+      - '.github/workflows/deploy-pages.yml'
   workflow_dispatch:
 
 permissions:
