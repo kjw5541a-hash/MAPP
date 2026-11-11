@@ -20,8 +20,19 @@ export function NowPlayingSheet() {
   const liked = useLibraryStore((s) => (currentTrack ? s.tracks.find((t) => t.id === currentTrack.id)?.liked : undefined));
 
   const touchStartY = useRef<number | null>(null);
+  const headerTouchStartY = useRef<number | null>(null);
 
   if (!showNowPlaying || !currentTrack) return null;
+
+  const onHeaderTouchStart = (e: React.TouchEvent) => {
+    headerTouchStartY.current = e.touches[0].clientY;
+  };
+  const onHeaderTouchEnd = (e: React.TouchEvent) => {
+    if (headerTouchStartY.current === null) return;
+    const delta = e.changedTouches[0].clientY - headerTouchStartY.current;
+    if (delta >= 80) setShowNowPlaying(false);
+    headerTouchStartY.current = null;
+  };
 
   const onTouchStart = (e: React.TouchEvent) => {
     touchStartY.current = e.touches[0].clientY;
@@ -36,7 +47,11 @@ export function NowPlayingSheet() {
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-nm-bg safe-top safe-bottom">
-      <div className="flex items-center justify-between px-4 pt-3 pb-1 shrink-0">
+      <div
+        className="flex items-center justify-between px-4 pt-3 pb-1 shrink-0"
+        onTouchStart={onHeaderTouchStart}
+        onTouchEnd={onHeaderTouchEnd}
+      >
         <button
           type="button"
           aria-label="닫기"
