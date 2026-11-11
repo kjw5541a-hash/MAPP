@@ -1,6 +1,20 @@
 import { useEffect, useRef } from "react";
+import type { Track } from "../types";
 import { usePlayerStore } from "../store/playerStore";
 import { getTrackFile, getTrackArt } from "../lib/db";
+
+function getNextTrack(): Track | null {
+  const { queue, playOrder, orderPos, repeat } = usePlayerStore.getState();
+  if (repeat === "one") return null;
+  let nextQueueIndex: number | undefined;
+  if (orderPos + 1 < playOrder.length) {
+    nextQueueIndex = playOrder[orderPos + 1];
+  } else if (repeat === "all" && playOrder.length > 0) {
+    nextQueueIndex = playOrder[0];
+  }
+  if (nextQueueIndex === undefined) return null;
+  return queue[nextQueueIndex] ?? null;
+}
 
 function updatePositionState(duration: number, position: number) {
   if (!("mediaSession" in navigator) || typeof navigator.mediaSession.setPositionState !== "function") {
@@ -33,6 +47,8 @@ export function useAudioElement() {
   }
   const objectUrlRef = useRef<string | null>(null);
   const artUrlRef = useRef<string | null>(null);
+  const prefetchedRef = useRef<{ trackId: string; blob: Blob; objectUrl: string } | null>(null);
+  const prefetchedForTrackIdRef = useRef<string | null>(null);
   // Timestamp of the last src swap, to filter out the stale pause event the
   // browser fires for the old resource when a new track starts.
   const lastSrcChangeRef = useRef(0);
@@ -46,6 +62,42 @@ export function useAudioElement() {
       URL.revokeObjectURL(artUrlRef.current);
       artUrlRef.current = null;
     }
+    if (prefetchedRef.current?.objectUrl) {
+      URL.revokeObjectURL(prefetchedRef.current.objectUrl);
+      prefetchedRef.current = null;
+    }
+  };
+
+  const checkAndPrefetchNextTrack = () => {
+    const current = usePlayerStore.getState().currentTrack();
+    if (!current) return;
+    if (prefetchedForTrackIdRef.current === current.id) return;
+
+    const nextTrack = getNextTrack();
+    if (!nextTrack) return;
+    if (prefetchedRef.current?.trackId === nextTrack.id) return;
+
+    prefetchedForTrackIdRef.current = current.id;
+    const targetTrackId = nextTrack.id;
+
+    getTrackFile(nextTrack.fileKey)
+      .then((blob) => {
+        if (!blob) return;
+        const currentNow = usePlayerStore.getState().currentTrack();
+        if (currentNow?.id !== current.id) return;
+
+        if (prefetchedRef.current?.objectUrl) {
+          URL.revokeObjectURL(prefetchedRef.current.objectUrl);
+        }
+        prefetchedRef.current = {
+          trackId: targetTrackId,
+          blob,
+          objectUrl: URL.createObjectURL(blob),
+        };
+      })
+      .catch(() => {
+        // 프리페치 실패(IndexedDB 오류 등)는 조용히 무시하고 기존 전환 경로가 그대로 동작하게 한다.
+      });
   };
 
   const currentTrack = usePlayerStore((s) => s.currentTrack());
@@ -66,20 +118,56 @@ export function useAudioElement() {
       return;
     }
 
+    const prefetched = prefetchedRef.current;
+    prefetchedRef.current = null;
+    const isPrefetchMatch = prefetched?.trackId === currentTrack.id;
+    if (prefetched && !isPrefetchMatch && prefetched.objectUrl) {
+      URL.revokeObjectURL(prefetched.objectUrl);
+    }
+    const matchingPrefetch = isPrefetchMatch ? prefetched : null;
+
     (async () => {
-      const [fileBlob, artBlob] = await Promise.all([
-        getTrackFile(currentTrack.fileKey),
-        currentTrack.artKey ? getTrackArt(currentTrack.artKey) : Promise.resolve(undefined),
-      ]);
-      if (cancelled || !fileBlob) return;
+      const artPromise = currentTrack.artKey
+        ? getTrackArt(currentTrack.artKey)
+        : Promise.resolve(undefined);
+
+      let fileBlob: Blob | undefined;
+      let url: string | undefined;
+
+      if (matchingPrefetch) {
+        fileBlob = matchingPrefetch.blob;
+        url = matchingPrefetch.objectUrl;
+      } else {
+        fileBlob = await getTrackFile(currentTrack.fileKey);
+      }
+
+      if (cancelled || !fileBlob) {
+        if (matchingPrefetch?.objectUrl) {
+          URL.revokeObjectURL(matchingPrefetch.objectUrl);
+        }
+        return;
+      }
 
       if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
-      const url = URL.createObjectURL(fileBlob);
+      if (!url) {
+        url = URL.createObjectURL(fileBlob);
+      }
       objectUrlRef.current = url;
       audio.src = url;
       lastSrcChangeRef.current = Date.now();
       const initialProgress = usePlayerStore.getState().progress;
       audio.currentTime = initialProgress > 0 ? initialProgress : 0;
+
+      if (usePlayerStore.getState().isPlaying) {
+        audio.play().catch(() => {
+          const { setPlaying, setPlaybackError } = usePlayerStore.getState();
+          setPlaying(false);
+          setPlaybackError("재생할 수 없습니다. 다시 눌러주세요.");
+        });
+      }
+
+      const artBlob = await artPromise;
+      if (cancelled) return;
 
       if (artUrlRef.current) URL.revokeObjectURL(artUrlRef.current);
       artUrlRef.current = artBlob ? URL.createObjectURL(artBlob) : null;
@@ -92,14 +180,6 @@ export function useAudioElement() {
           artwork: artUrlRef.current
             ? [{ src: artUrlRef.current, sizes: "512x512", type: artBlob!.type }]
             : [],
-        });
-      }
-
-      if (usePlayerStore.getState().isPlaying) {
-        audio.play().catch(() => {
-          const { setPlaying, setPlaybackError } = usePlayerStore.getState();
-          setPlaying(false);
-          setPlaybackError("재생할 수 없습니다. 다시 눌러주세요.");
         });
       }
     })();
@@ -151,6 +231,14 @@ export function useAudioElement() {
     const onTimeUpdate = () => {
       setProgress(audio.currentTime);
       updatePositionState(audio.duration, audio.currentTime);
+
+      if (
+        audio.duration > 0 &&
+        Number.isFinite(audio.duration) &&
+        audio.duration - audio.currentTime <= 15
+      ) {
+        checkAndPrefetchNextTrack();
+      }
     };
     const onLoadedMetadata = () => {
       setDuration(audio.duration || 0);
