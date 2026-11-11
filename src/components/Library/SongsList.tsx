@@ -15,8 +15,23 @@ const ROW_GAP = 4; // px — matches the previous list's gap-1
 const ROW_ESTIMATE = 64; // fallback row step (content + gap) before the first row is measured
 const OVERSCAN = 8; // extra rows kept mounted above/below the viewport
 
-const SORT_CYCLE: SongSort[] = ["title", "artist"];
-const SORT_LABEL: Record<SongSort, string> = { title: "제목순", artist: "아티스트순" };
+const SORT_CYCLE: SongSort[] = ["title", "artist", "album"];
+const SORT_LABEL: Record<SongSort, string> = {
+  title: "제목순",
+  artist: "가수순",
+  album: "앨범순",
+};
+const STORAGE_KEY = "mapp-songs-sort";
+
+function isSongSort(value: string | null): value is SongSort {
+  return SORT_CYCLE.some((s) => s === value);
+}
+
+function initialSort(): SongSort {
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (isSongSort(saved)) return saved;
+  return "title";
+}
 
 export function SongsList() {
   const tracks = useLibraryStore((s) => s.tracks);
@@ -34,7 +49,7 @@ export function SongsList() {
 
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
-  const [sort, setSort] = useState<SongSort>("title");
+  const [sort, setSort] = useState<SongSort>(initialSort);
   const [pendingDelete, setPendingDelete] = useState<Track | null>(null);
   const [showPlaylistPicker, setShowPlaylistPicker] = useState(false);
   const [showNewPlaylist, setShowNewPlaylist] = useState(false);
@@ -120,7 +135,11 @@ export function SongsList() {
         <button
           type="button"
           aria-label={`정렬: ${SORT_LABEL[sort]}`}
-          onClick={() => setSort(SORT_CYCLE[(SORT_CYCLE.indexOf(sort) + 1) % SORT_CYCLE.length])}
+          onClick={() => {
+            const next = SORT_CYCLE[(SORT_CYCLE.indexOf(sort) + 1) % SORT_CYCLE.length];
+            setSort(next);
+            localStorage.setItem(STORAGE_KEY, next);
+          }}
           className="h-10 px-3 rounded-full nm-flat flex items-center gap-1 shrink-0 text-nm-accent text-xs whitespace-nowrap"
         >
           <ArrowUpDown className="w-4 h-4" />

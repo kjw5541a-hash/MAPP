@@ -72,10 +72,18 @@ export function groupByArtist(tracks: Track[]): ArtistGroup[] {
   return Array.from(map.values()).sort((a, b) => a.artist.localeCompare(b.artist));
 }
 
-export type SongSort = "title" | "artist";
+export type SongSort = "title" | "artist" | "album";
 
 export function sortTracks(tracks: Track[], sort: SongSort): Track[] {
-  return [...tracks].sort((a, b) => a[sort].localeCompare(b[sort]));
+  return [...tracks].sort((a, b) => {
+    if (sort === "artist") {
+      return a.artist.localeCompare(b.artist) || a.title.localeCompare(b.title);
+    }
+    if (sort === "album") {
+      return a.album.localeCompare(b.album) || compareAlbumTracks(a, b);
+    }
+    return a.title.localeCompare(b.title);
+  });
 }
 
 export function searchTracks(tracks: Track[], query: string): Track[] {
