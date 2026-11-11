@@ -128,15 +128,49 @@ export function useRowGesture(options: RowGestureOptions) {
       startPos.current = null;
     };
 
+    let mouseStart: { x: number; y: number } | null = null;
+
+    const onMouseDown = (e: MouseEvent) => {
+      if (e.button !== 0 || phase.current !== "idle") return;
+      if ((e.target as HTMLElement | null)?.closest("[data-swipe-ignore]")) return;
+      mouseStart = { x: e.clientX, y: e.clientY };
+    };
+
+    const onMouseMove = (e: MouseEvent) => {
+      if (!mouseStart) return;
+      const dx = e.clientX - mouseStart.x;
+      const dy = e.clientY - mouseStart.y;
+      if (Math.abs(dx) > MOVE_CANCEL_PX || Math.abs(dy) > MOVE_CANCEL_PX) {
+        mouseStart = null;
+      }
+    };
+
+    const onMouseUp = (e: MouseEvent) => {
+      if (!mouseStart) return;
+      const start = mouseStart;
+      mouseStart = null;
+      if (e.button !== 0 || phase.current !== "idle") return;
+      const dx = e.clientX - start.x;
+      const dy = e.clientY - start.y;
+      if (Math.abs(dx) > MOVE_CANCEL_PX || Math.abs(dy) > MOVE_CANCEL_PX) return;
+      optionsRef.current.onTap?.();
+    };
+
     el.addEventListener("touchstart", onStart, { passive: true });
     el.addEventListener("touchmove", onMove, { passive: false });
     el.addEventListener("touchend", onEnd, { passive: true });
     el.addEventListener("touchcancel", onEnd, { passive: true });
+    el.addEventListener("mousedown", onMouseDown);
+    el.addEventListener("mousemove", onMouseMove);
+    el.addEventListener("mouseup", onMouseUp);
     return () => {
       el.removeEventListener("touchstart", onStart);
       el.removeEventListener("touchmove", onMove);
       el.removeEventListener("touchend", onEnd);
       el.removeEventListener("touchcancel", onEnd);
+      el.removeEventListener("mousedown", onMouseDown);
+      el.removeEventListener("mousemove", onMouseMove);
+      el.removeEventListener("mouseup", onMouseUp);
       clearTimer();
     };
   }, [open, swipeEnabled]);
