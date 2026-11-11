@@ -106,7 +106,15 @@ export function useAudioElement() {
   // Handle imperative seek requests from the UI.
   useEffect(() => {
     if (seekRequest === null) return;
-    audioRef.current!.currentTime = seekRequest;
+    const audio = audioRef.current!;
+    audio.currentTime = seekRequest;
+    if (usePlayerStore.getState().isPlaying) {
+      audio.play().catch(() => {
+        const { setPlaying, setPlaybackError } = usePlayerStore.getState();
+        setPlaying(false);
+        setPlaybackError("재생할 수 없습니다. 다시 눌러주세요.");
+      });
+    }
     clearSeekRequest();
   }, [seekRequest, clearSeekRequest]);
 
