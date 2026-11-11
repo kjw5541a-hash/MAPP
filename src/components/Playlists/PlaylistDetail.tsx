@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Play, Shuffle, Trash2, Plus } from "lucide-react";
+import { Play, Shuffle, Trash2, Plus, Pencil } from "lucide-react";
 import { useLibraryStore } from "../../store/libraryStore";
 import { useUIStore } from "../../store/uiStore";
 import { usePlayerStore } from "../../store/playerStore";
@@ -9,6 +9,7 @@ import { CoverArt } from "../CoverArt";
 import { ConfirmDialog } from "../ConfirmDialog";
 import { ReorderableTrackRow } from "../ReorderableTrackRow";
 import { TrackPickerModal } from "./TrackPickerModal";
+import { RenamePlaylistModal } from "./RenamePlaylistModal";
 import type { Track } from "../../types";
 
 export function PlaylistDetail({ playlistId }: { playlistId: string }) {
@@ -17,6 +18,7 @@ export function PlaylistDetail({ playlistId }: { playlistId: string }) {
   const deletePlaylist = useLibraryStore((s) => s.deletePlaylist);
   const removeFromPlaylist = useLibraryStore((s) => s.removeFromPlaylist);
   const reorderPlaylist = useLibraryStore((s) => s.reorderPlaylist);
+  const renamePlaylist = useLibraryStore((s) => s.renamePlaylist);
   const closeDetail = useUIStore((s) => s.closeDetail);
   const playQueue = usePlayerStore((s) => s.playQueue);
   const playShuffled = usePlayerStore((s) => s.playShuffled);
@@ -25,6 +27,7 @@ export function PlaylistDetail({ playlistId }: { playlistId: string }) {
   const [confirmDeletePlaylist, setConfirmDeletePlaylist] = useState(false);
   const [pendingRemove, setPendingRemove] = useState<Track | null>(null);
   const [showTrackPicker, setShowTrackPicker] = useState(false);
+  const [showRenameModal, setShowRenameModal] = useState(false);
 
   const { orderedIds, draggingId, dragOffsetY, rowRefs, startDrag, moveDrag, endDrag } =
     useDragReorder(playlist?.trackIds ?? [], (ids) => reorderPlaylist(playlistId, ids));
@@ -52,7 +55,17 @@ export function PlaylistDetail({ playlistId }: { playlistId: string }) {
             rounded="rounded-2xl"
           />
           <div>
-            <h2 className="text-xl font-semibold">{playlist.name}</h2>
+            <h2 className="text-xl font-semibold flex items-center justify-center">
+              <button
+                type="button"
+                onClick={() => setShowRenameModal(true)}
+                aria-label={`재생목록 이름 수정: ${playlist.name}`}
+                className="inline-flex items-center justify-center gap-1.5 max-w-full min-w-0 px-2 py-0.5 -my-0.5 rounded-xl hover:bg-nm-text/5 active:bg-nm-text/10 transition-colors group"
+              >
+                <span className="truncate">{playlist.name}</span>
+                <Pencil className="w-4 h-4 text-nm-text-muted shrink-0 group-hover:text-nm-accent transition-colors" />
+              </button>
+            </h2>
             <p className="text-xs text-nm-text-muted mt-1">{tracks.length}곡</p>
           </div>
           <div className="flex gap-3 mt-2">
@@ -144,6 +157,18 @@ export function PlaylistDetail({ playlistId }: { playlistId: string }) {
           playlistId={playlistId}
           existingTrackIds={playlist.trackIds}
           onClose={() => setShowTrackPicker(false)}
+        />
+      )}
+
+      {showRenameModal && (
+        <RenamePlaylistModal
+          initialName={playlist.name}
+          onClose={() => setShowRenameModal(false)}
+          onRename={(newName) => {
+            if (newName !== playlist.name) {
+              renamePlaylist(playlistId, newName);
+            }
+          }}
         />
       )}
     </div>
