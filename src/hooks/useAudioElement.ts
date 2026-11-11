@@ -2,6 +2,29 @@ import { useEffect, useRef } from "react";
 import { usePlayerStore } from "../store/playerStore";
 import { getTrackFile, getTrackArt } from "../lib/db";
 
+function updatePositionState(duration: number, position: number) {
+  if (!("mediaSession" in navigator) || typeof navigator.mediaSession.setPositionState !== "function") {
+    return;
+  }
+  if (
+    !Number.isFinite(duration) ||
+    duration <= 0 ||
+    !Number.isFinite(position) ||
+    position < 0
+  ) {
+    return;
+  }
+  try {
+    navigator.mediaSession.setPositionState({
+      duration,
+      position: Math.min(position, duration),
+      playbackRate: 1.0,
+    });
+  } catch {
+    // Unsupported or rejected position state; ignore silently.
+  }
+}
+
 export function useAudioElement() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   if (!audioRef.current) {
@@ -124,8 +147,14 @@ export function useAudioElement() {
     const { setProgress, setDuration, onTrackEnded, next, prev, seek, setPlaying } =
       usePlayerStore.getState();
 
-    const onTimeUpdate = () => setProgress(audio.currentTime);
-    const onLoadedMetadata = () => setDuration(audio.duration || 0);
+    const onTimeUpdate = () => {
+      setProgress(audio.currentTime);
+      updatePositionState(audio.duration, audio.currentTime);
+    };
+    const onLoadedMetadata = () => {
+      setDuration(audio.duration || 0);
+      updatePositionState(audio.duration, audio.currentTime);
+    };
     const onEnded = () => onTrackEnded();
     // Swapping src on a playing element makes the browser fire a pause event
     // for the old resource; that stale event must not stop the new track.
@@ -148,7 +177,10 @@ export function useAudioElement() {
       navigator.mediaSession.setActionHandler("previoustrack", () => prev());
       navigator.mediaSession.setActionHandler("nexttrack", () => next());
       navigator.mediaSession.setActionHandler("seekto", (details) => {
-        if (details.seekTime !== undefined) seek(details.seekTime);
+        if (details.seekTime !== undefined) {
+          seek(details.seekTime);
+          updatePositionState(audio.duration, details.seekTime);
+        }
       });
       // iOS is a known WebKit bug (webkit.org/b/229068): it keeps showing the
       // 10s skip icons on the lock screen regardless of previoustrack/nexttrack
