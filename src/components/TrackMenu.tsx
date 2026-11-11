@@ -2,6 +2,7 @@ import { useState } from "react";
 import { MoreHorizontal, ListPlus, Trash2, ListMinus } from "lucide-react";
 import { useLibraryStore } from "../store/libraryStore";
 import type { Track } from "../types";
+import { ConfirmDialog } from "./ConfirmDialog";
 
 interface TrackMenuProps {
   track: Track;
@@ -11,6 +12,7 @@ interface TrackMenuProps {
 export function TrackMenu({ track, playlistIdContext }: TrackMenuProps) {
   const [open, setOpen] = useState(false);
   const [showPlaylists, setShowPlaylists] = useState(false);
+  const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   const playlists = useLibraryStore((s) => s.playlists);
   const addToPlaylist = useLibraryStore((s) => s.addToPlaylist);
   const removeFromPlaylist = useLibraryStore((s) => s.removeFromPlaylist);
@@ -19,6 +21,7 @@ export function TrackMenu({ track, playlistIdContext }: TrackMenuProps) {
   const close = () => {
     setOpen(false);
     setShowPlaylists(false);
+    setShowConfirmDelete(false);
   };
 
   return (
@@ -60,10 +63,7 @@ export function TrackMenu({ track, playlistIdContext }: TrackMenuProps) {
                 <button
                   type="button"
                   className="w-full flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-nm-text/10 transition-colors text-left text-red-500"
-                  onClick={() => {
-                    deleteTrack(track.id);
-                    close();
-                  }}
+                  onClick={() => setShowConfirmDelete(true)}
                 >
                   <Trash2 className="w-4 h-4" /> 라이브러리에서 삭제
                 </button>
@@ -87,6 +87,19 @@ export function TrackMenu({ track, playlistIdContext }: TrackMenuProps) {
             )}
           </div>
         </>
+      )}
+
+      {showConfirmDelete && (
+        <ConfirmDialog
+          title="라이브러리에서 삭제할까요?"
+          description={`"${track.title}"이(가) 모든 재생목록에서도 함께 삭제됩니다.`}
+          confirmLabel="삭제"
+          onCancel={() => setShowConfirmDelete(false)}
+          onConfirm={() => {
+            deleteTrack(track.id);
+            close();
+          }}
+        />
       )}
     </div>
   );
