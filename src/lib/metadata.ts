@@ -1,6 +1,4 @@
 import { parseBlob } from "music-metadata";
-import { sha256 } from "@noble/hashes/sha2.js";
-import { bytesToHex } from "@noble/hashes/utils.js";
 import type { Track } from "../types";
 
 export interface ParsedTrack {
@@ -20,20 +18,9 @@ export async function hashBuffer(data: BufferSource): Promise<string> {
     .join("");
 }
 
-const CHUNK_SIZE = 4 * 1024 * 1024; // 4MB
-
 /** Identifies a file by its bytes, so a rename still counts as the same track. */
 export async function hashFile(file: File): Promise<string> {
-  try {
-    const hasher = sha256.create();
-    for (let offset = 0; offset < file.size; offset += CHUNK_SIZE) {
-      const chunk = await file.slice(offset, offset + CHUNK_SIZE).arrayBuffer();
-      hasher.update(new Uint8Array(chunk));
-    }
-    return bytesToHex(hasher.digest());
-  } catch {
-    return hashBuffer(await file.arrayBuffer());
-  }
+  return hashBuffer(await file.arrayBuffer());
 }
 
 export async function parseM4aFile(file: File, hash: string): Promise<ParsedTrack> {

@@ -44,6 +44,8 @@ interface LibraryState {
   restoreBackup: (backup: LibraryBackup) => Promise<RestoreResult>;
 }
 
+const FILE_IMPORT_TIMEOUT_MS = 60_000;
+
 export const useLibraryStore = create<LibraryState>((set, get) => ({
   ready: false,
   tracks: [],
@@ -77,17 +79,39 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
     set({ importProgress: { active: true, done: 0, total: list.length }, importResult: null });
 
     for (const file of list) {
+      let timeoutId: ReturnType<typeof setTimeout> | undefined;
       try {
-        const hash = await hashFile(file);
-        if (seen.has(hash)) {
-          skipped++;
-        } else {
-          seen.add(hash);
-          const { track, fileBlob, artBlob } = await parseM4aFile(file, hash);
-          await db.addTrack(track, fileBlob, artBlob);
-          added++;
-          newTracks.push(track);
-        }
+        let timedOut = false;
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          timeoutId = setTimeout(() => {
+            timedOut = true;
+            reject(new Error("파일 읽기 시간 초과"));
+          }, FILE_IMPORT_TIMEOUT_MS);
+        });
+
+        const processPromise = (async () => {
+          const hash = await hashFile(file);
+          if (timedOut) return;
+          if (seen.has(hash)) {
+            skipped++;
+          } else {
+            seen.add(hash);
+            const { track, fileBlob, artBlob } = await parseM4aFile(file, hash);
+            if (timedOut) {
+              // Never added to the library: drop the hash so a later
+              // re-import retries this file instead of skipping it as a duplicate.
+              seen.delete(hash);
+              return;
+            }
+            await db.addTrack(track, fileBlob, artBlob);
+            if (timedOut) return;
+            added++;
+            newTracks.push(track);
+          }
+        })();
+        processPromise.catch(() => {});
+
+        await Promise.race([processPromise, timeoutPromise]);
       } catch (err) {
         console.error("Failed to import", file.name, err);
         failed++;
@@ -99,6 +123,8 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
         if (!failedReason) {
           failedReason = err instanceof Error && err.message ? err.message : "가져오기 실패";
         }
+      } finally {
+        clearTimeout(timeoutId);
       }
       set((state) => ({
         importProgress: { ...state.importProgress, done: state.importProgress.done + 1 },
