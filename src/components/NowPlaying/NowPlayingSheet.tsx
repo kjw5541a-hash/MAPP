@@ -78,7 +78,8 @@ export function NowPlayingSheet() {
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
       >
-        <div className="w-full max-w-sm aspect-square shrink-0">
+        {/* Cap cover size by dvh so the column fits short Safari viewports and the progress bar never overlaps the controls */}
+        <div className="w-full max-w-[min(24rem,calc(100dvh-469px-env(safe-area-inset-bottom,0px)))] aspect-square shrink-0">
           {showLyrics ? (
             <LyricsView track={currentTrack} />
           ) : (
