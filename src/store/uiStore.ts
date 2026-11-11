@@ -13,22 +13,26 @@ interface UIState {
   tab: Tab;
   collectionMode: CollectionMode;
   detail: Detail;
+  updatePending: boolean;
   setTab: (tab: Tab) => void;
   setCollectionMode: (mode: CollectionMode) => void;
   openAlbum: (key: string) => void;
   openArtist: (key: string) => void;
   openPlaylist: (id: string) => void;
   closeDetail: () => void;
+  setUpdatePending: (pending: boolean) => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
   tab: "songs",
   collectionMode: "albums",
   detail: null,
+  updatePending: false,
   setTab: (tab) => set({ tab, detail: null }),
   setCollectionMode: (collectionMode) => set({ collectionMode, detail: null }),
   openAlbum: (key) => set({ detail: { type: "album", key } }),
   openArtist: (key) => set({ detail: { type: "artist", key } }),
   openPlaylist: (id) => set({ detail: { type: "playlist", id } }),
   closeDetail: () => set({ detail: null }),
+  setUpdatePending: (updatePending) => set({ updatePending }),
 }));

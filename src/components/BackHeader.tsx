@@ -1,4 +1,5 @@
 import { ChevronLeft } from "lucide-react";
+import { useUIStore } from "../store/uiStore";
 
 interface BackHeaderProps {
   title: string;
@@ -6,8 +7,10 @@ interface BackHeaderProps {
 }
 
 export function BackHeader({ title, onBack }: BackHeaderProps) {
+  const updatePending = useUIStore((s) => s.updatePending);
+
   return (
-    <div className="flex items-center gap-3 px-4 pb-2 shrink-0 safe-top">
+    <div className={`flex items-center gap-3 px-4 pb-2 shrink-0 ${updatePending ? "pt-2" : "safe-top"}`}>
       <button
         type="button"
         onClick={onBack}

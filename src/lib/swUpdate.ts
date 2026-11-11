@@ -1,3 +1,6 @@
+import { usePlayerStore } from "../store/playerStore";
+import { useUIStore } from "../store/uiStore";
+
 // iOS only looks for a new service worker on a cold start, so an installed
 // home-screen app can keep serving a stale build indefinitely. Ask explicitly
 // whenever the app comes back to the foreground, and reload once the newer
@@ -11,6 +14,11 @@ export function watchForUpdates() {
   navigator.serviceWorker.addEventListener("controllerchange", () => {
     // On a first install there is nothing stale to replace, so skip the reload.
     if (!hadController || reloading) return;
+    if (usePlayerStore.getState().isPlaying) {
+      reloading = true;
+      useUIStore.getState().setUpdatePending(true);
+      return;
+    }
     reloading = true;
     window.location.reload();
   });

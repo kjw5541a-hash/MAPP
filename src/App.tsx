@@ -9,6 +9,7 @@ import { TabBar } from "./components/TabBar";
 import { MiniPlayer } from "./components/MiniPlayer";
 import { ImportToast } from "./components/ImportToast";
 import { ImportButton } from "./components/ImportButton";
+import { UpdateBanner } from "./components/UpdateBanner";
 import { NowPlayingSheet } from "./components/NowPlaying/NowPlayingSheet";
 import { SongsList } from "./components/Library/SongsList";
 import { CollectionView } from "./components/Library/CollectionView";
@@ -40,6 +41,7 @@ function App() {
   const ready = useLibraryStore((s) => s.ready);
   const tab = useUIStore((s) => s.tab);
   const detail = useUIStore((s) => s.detail);
+  const updatePending = useUIStore((s) => s.updatePending);
 
   const selectActive = useSongSelectionStore((s) => s.active);
   const selectedCount = useSongSelectionStore((s) => s.selected.size);
@@ -70,7 +72,7 @@ function App() {
 
     return (
       <div className="flex flex-col h-full">
-        <div className="flex items-center justify-between px-4 pb-2 shrink-0 safe-top">
+        <div className={`flex items-center justify-between px-4 pb-2 shrink-0 ${updatePending ? "pt-2" : "safe-top"}`}>
           {songsSelecting ? (
             <>
               <h1 className="text-lg font-semibold">{selectedCount}개 선택됨</h1>
@@ -121,6 +123,7 @@ function App() {
 
   return (
     <div className="fixed inset-0 flex flex-col overflow-hidden">
+      <UpdateBanner />
       <main className="flex-1 min-h-0">{renderContent()}</main>
       {!keyboardOpen && (
         <>
