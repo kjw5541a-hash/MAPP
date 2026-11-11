@@ -46,6 +46,16 @@ interface LibraryState {
 
 const FILE_IMPORT_TIMEOUT_MS = 60_000;
 
+type ImportStep = "읽기" | "메타데이터 분석" | "저장";
+
+function formatFileSize(bytes: number): string {
+  if (!Number.isFinite(bytes) || bytes <= 0) return "0.0KB";
+  if (bytes < 1024 * 1024) {
+    return `${(bytes / 1024).toFixed(1)}KB`;
+  }
+  return `${(bytes / (1024 * 1024)).toFixed(1)}MB`;
+}
+
 export const useLibraryStore = create<LibraryState>((set, get) => ({
   ready: false,
   tracks: [],
@@ -80,16 +90,27 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
 
     for (const file of list) {
       let timeoutId: ReturnType<typeof setTimeout> | undefined;
+      let timedOut = false;
+      let step: ImportStep = "읽기";
       try {
-        let timedOut = false;
         const timeoutPromise = new Promise<never>((_, reject) => {
           timeoutId = setTimeout(() => {
             timedOut = true;
-            reject(new Error("파일 읽기 시간 초과"));
+            const message =
+              step === "읽기"
+                ? `파일 읽기 시간 초과 · ${formatFileSize(file.size)}`
+                : step === "메타데이터 분석"
+                ? "메타데이터 분석 시간 초과"
+                : "저장 시간 초과";
+            reject(new Error(message));
           }, FILE_IMPORT_TIMEOUT_MS);
         });
 
         const processPromise = (async () => {
+          // On iOS Safari, un-downloaded iCloud/cloud-provider files hang at the OS
+          // file coordination layer. FileReader and file.stream() share the same WebCore
+          // FileReaderLoader under the hood and also hang rather than failing fast, so
+          // we retain the proven arrayBuffer() read path and let the 60s timeout bound it.
           const buffer = await file.arrayBuffer();
           if (timedOut) return;
           const hash = await hashBuffer(buffer);
@@ -98,18 +119,28 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
             skipped++;
           } else {
             seen.add(hash);
-            const fileBlob = new Blob([buffer], { type: file.type });
-            const { track, artBlob } = await parseM4aFile(fileBlob, file.name, hash);
-            if (timedOut) {
-              // Never added to the library: drop the hash so a later
-              // re-import retries this file instead of skipping it as a duplicate.
+            try {
+              step = "메타데이터 분석";
+              const fileBlob = new Blob([buffer], { type: file.type });
+              const { track, artBlob } = await parseM4aFile(fileBlob, file.name, hash);
+              if (timedOut) {
+                // Never added to the library: drop the hash so a later
+                // re-import retries this file instead of skipping it as a duplicate.
+                seen.delete(hash);
+                return;
+              }
+              step = "저장";
+              await db.addTrack(track, fileBlob, artBlob);
+              if (timedOut) {
+                seen.delete(hash);
+                return;
+              }
+              added++;
+              newTracks.push(track);
+            } catch (err) {
               seen.delete(hash);
-              return;
+              throw err;
             }
-            await db.addTrack(track, fileBlob, artBlob);
-            if (timedOut) return;
-            added++;
-            newTracks.push(track);
           }
         })();
         processPromise.catch(() => {});
@@ -124,7 +155,12 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
           break;
         }
         if (!failedReason) {
-          failedReason = err instanceof Error && err.message ? err.message : "가져오기 실패";
+          if (timedOut) {
+            failedReason = err instanceof Error && err.message ? err.message : "시간 초과";
+          } else {
+            const message = err instanceof Error && err.message ? err.message : "가져오기 실패";
+            failedReason = `${step}: ${message}`;
+          }
         }
       } finally {
         clearTimeout(timeoutId);
