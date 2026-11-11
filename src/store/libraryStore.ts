@@ -59,6 +59,7 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
     // back to creation time so they still come out in a stable sequence.
     playlists.sort((a, b) => (a.order ?? a.dateCreated) - (b.order ?? b.dateCreated));
     set({ tracks, playlists, ready: true });
+    usePlayerStore.getState().restorePlayback(tracks);
   },
 
   importFiles: async (files) => {

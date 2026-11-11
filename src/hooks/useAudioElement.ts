@@ -78,7 +78,8 @@ export function useAudioElement() {
       objectUrlRef.current = url;
       audio.src = url;
       lastSrcChangeRef.current = Date.now();
-      audio.currentTime = 0;
+      const initialProgress = usePlayerStore.getState().progress;
+      audio.currentTime = initialProgress > 0 ? initialProgress : 0;
 
       if (artUrlRef.current) URL.revokeObjectURL(artUrlRef.current);
       artUrlRef.current = artBlob ? URL.createObjectURL(artBlob) : null;
@@ -153,6 +154,10 @@ export function useAudioElement() {
     };
     const onLoadedMetadata = () => {
       setDuration(audio.duration || 0);
+      const { progress } = usePlayerStore.getState();
+      if (progress > 0 && Math.abs(audio.currentTime - progress) > 0.5) {
+        audio.currentTime = progress;
+      }
       updatePositionState(audio.duration, audio.currentTime);
     };
     const onEnded = () => onTrackEnded();
