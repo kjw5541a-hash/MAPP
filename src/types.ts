@@ -32,3 +32,36 @@ export type QueueSource =
   | { type: "album"; album: string }
   | { type: "artist"; artist: string }
   | { type: "playlist"; playlistId: string };
+
+export interface LibraryBackupTrack {
+  id: string;
+  title: string;
+  artist: string;
+  album: string;
+  duration: number;
+  lyrics?: string;
+  dateAdded?: number;
+  hash?: string;
+  liked?: boolean;
+  likeOrder?: number;
+}
+
+export interface LibraryBackupPlaylist {
+  id: string;
+  name: string;
+  trackIds: string[];
+  dateCreated: number;
+  order: number;
+}
+
+export interface LibraryBackup {
+  version: number;
+  exportDate: number;
+  tracks: LibraryBackupTrack[];
+  playlists: LibraryBackupPlaylist[];
+}
+
+export interface RestoreResult {
+  restoredLikes: number;
+  restoredPlaylists: number;
+}

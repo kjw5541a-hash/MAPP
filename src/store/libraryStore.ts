@@ -1,9 +1,10 @@
 import { create } from "zustand";
-import type { Track, Playlist } from "../types";
+import type { Track, Playlist, LibraryBackup, RestoreResult } from "../types";
 import * as db from "../lib/db";
 import { parseM4aFile, hashFile } from "../lib/metadata";
 import { clearArtCache } from "../lib/artCache";
 import { usePlayerStore } from "./playerStore";
+import { requestStoragePersistence, isQuotaExceededError } from "../lib/storage";
 
 interface ImportProgress {
   active: boolean;
@@ -15,6 +16,7 @@ export interface ImportResult {
   added: number;
   skipped: number;
   failed: number;
+  quotaExceeded?: boolean;
 }
 
 interface LibraryState {
@@ -38,6 +40,7 @@ interface LibraryState {
   removeFromPlaylist: (playlistId: string, trackId: string) => Promise<void>;
   reorderPlaylist: (playlistId: string, trackIds: string[]) => Promise<void>;
   reorderPlaylists: (playlistIds: string[]) => Promise<void>;
+  restoreBackup: (backup: LibraryBackup) => Promise<RestoreResult>;
 }
 
 export const useLibraryStore = create<LibraryState>((set, get) => ({
@@ -48,6 +51,7 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
   importResult: null,
 
   init: async () => {
+    void requestStoragePersistence();
     const [tracks, playlists] = await Promise.all([db.getAllTracks(), db.getAllPlaylists()]);
     tracks.sort((a, b) => a.title.localeCompare(b.title));
     // Playlists saved before manual ordering existed have no `order` — fall
@@ -64,6 +68,7 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
     let added = 0;
     let skipped = 0;
     let failed = 0;
+    let quotaExceeded = false;
 
     set({ importProgress: { active: true, done: 0, total: list.length }, importResult: null });
 
@@ -84,6 +89,10 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
       } catch (err) {
         console.error("Failed to import", file.name, err);
         failed++;
+        if (isQuotaExceededError(err)) {
+          quotaExceeded = true;
+          break;
+        }
       }
       set((state) => ({
         importProgress: { ...state.importProgress, done: state.importProgress.done + 1 },
@@ -92,7 +101,7 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
 
     set({
       importProgress: { active: false, done: 0, total: 0 },
-      importResult: { added, skipped, failed },
+      importResult: { added, skipped, failed, quotaExceeded },
     });
   },
 
@@ -216,5 +225,79 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
       .filter((p): p is Playlist => p !== null);
     await Promise.all(updated.map((p) => db.savePlaylist(p)));
     set({ playlists: updated });
+  },
+
+  restoreBackup: async (backup) => {
+    const currentTracks = get().tracks;
+    const byHash = new Map<string, Track>();
+    const byId = new Map<string, Track>();
+    for (const track of currentTracks) {
+      if (track.hash) {
+        byHash.set(track.hash, track);
+      }
+      byId.set(track.id, track);
+    }
+
+    const backupIdToCurrentId = new Map<string, string>();
+    const restoredLikeTrackIds = new Set<string>();
+    const updatedTracksMap = new Map<string, Track>(currentTracks.map((t) => [t.id, t]));
+    const tracksToUpdate: Track[] = [];
+
+    for (const bt of backup.tracks ?? []) {
+      const matched = (bt.hash ? byHash.get(bt.hash) : undefined) ?? byId.get(bt.id);
+      if (!matched) continue;
+      backupIdToCurrentId.set(bt.id, matched.id);
+
+      if (bt.liked && !restoredLikeTrackIds.has(matched.id)) {
+        restoredLikeTrackIds.add(matched.id);
+        const current = updatedTracksMap.get(matched.id) ?? matched;
+        const updated: Track = {
+          ...current,
+          liked: true,
+          likeOrder: bt.likeOrder ?? current.likeOrder ?? Date.now(),
+        };
+        updatedTracksMap.set(matched.id, updated);
+        tracksToUpdate.push(updated);
+      }
+    }
+
+    await Promise.all(tracksToUpdate.map((t) => db.updateTrackMeta(t)));
+
+    const savedPlaylists: Playlist[] = [];
+    for (const bp of backup.playlists ?? []) {
+      if (!Array.isArray(bp.trackIds)) continue;
+      const validTrackIds = bp.trackIds
+        .map((tid) => backupIdToCurrentId.get(tid) ?? (byId.has(tid) ? tid : undefined))
+        .filter((id): id is string => Boolean(id));
+
+      if (validTrackIds.length === 0) continue;
+
+      const restoredPlaylist: Playlist = {
+        id: bp.id || crypto.randomUUID(),
+        name: bp.name,
+        trackIds: validTrackIds,
+        dateCreated: bp.dateCreated ?? Date.now(),
+        order: bp.order ?? Date.now(),
+      };
+      savedPlaylists.push(restoredPlaylist);
+    }
+
+    await Promise.all(savedPlaylists.map((p) => db.savePlaylist(p)));
+
+    const playlistMap = new Map(get().playlists.map((p) => [p.id, p]));
+    for (const p of savedPlaylists) {
+      playlistMap.set(p.id, p);
+    }
+    const newPlaylists = Array.from(playlistMap.values()).sort(
+      (a, b) => (a.order ?? a.dateCreated) - (b.order ?? b.dateCreated)
+    );
+
+    const newTracks = currentTracks.map((t) => updatedTracksMap.get(t.id) ?? t);
+    set({ tracks: newTracks, playlists: newPlaylists });
+
+    return {
+      restoredLikes: restoredLikeTrackIds.size,
+      restoredPlaylists: savedPlaylists.length,
+    };
   },
 }));

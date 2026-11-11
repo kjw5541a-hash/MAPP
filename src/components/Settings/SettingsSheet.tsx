@@ -1,9 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ChevronDown, Check } from "lucide-react";
 import { useSettingsStore, THEMES } from "../../store/settingsStore";
 import { useLibraryStore } from "../../store/libraryStore";
 import { usePlayerStore } from "../../store/playerStore";
 import { listModels, type GeminiModel } from "../../lib/recommend";
+import { getStorageInfo, type StorageInfo } from "../../lib/storage";
+import { formatBytes } from "../../lib/format";
+import { exportLibraryBackup } from "../../lib/backup";
+import type { LibraryBackup } from "../../types";
 
 export function SettingsSheet({ onClose }: { onClose: () => void }) {
   const theme = useSettingsStore((s) => s.theme);
@@ -18,8 +22,16 @@ export function SettingsSheet({ onClose }: { onClose: () => void }) {
   const tracks = useLibraryStore((s) => s.tracks);
   const playlists = useLibraryStore((s) => s.playlists);
   const clearLibrary = useLibraryStore((s) => s.clearLibrary);
+  const restoreBackup = useLibraryStore((s) => s.restoreBackup);
   const resetPlayer = usePlayerStore((s) => s.reset);
   const [confirmClear, setConfirmClear] = useState(false);
+  const [storageInfo, setStorageInfo] = useState<StorageInfo | null>(null);
+  const [restoreStatus, setRestoreStatus] = useState<{ message: string; isError?: boolean } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    void getStorageInfo().then(setStorageInfo);
+  }, []);
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-nm-bg">
@@ -162,6 +174,74 @@ export function SettingsSheet({ onClose }: { onClose: () => void }) {
             >
               라이브러리 전체 비우기
             </button>
+          )}
+        </div>
+
+        <h2 className="text-[13px] text-nm-text-muted px-2 pt-8 pb-2">백업</h2>
+        <div className="nm-flat rounded-2xl px-4 py-3">
+          {storageInfo && (
+            <div className="text-[13px] text-nm-text-muted space-y-1 pb-3 border-b border-nm-text/10">
+              <p>
+                저장 공간: {formatBytes(storageInfo.usage)} / {formatBytes(storageInfo.quota)}
+              </p>
+              <p>
+                영속성: {storageInfo.persisted ? "유지됨" : "기본"}
+              </p>
+            </div>
+          )}
+
+          <p className="text-[12px] text-nm-text-muted mt-3 leading-relaxed">
+            오디오 원본은 내보내지지 않으며, 좋아요와 재생목록 정보만 백업됩니다.
+          </p>
+
+          <div className="flex gap-2 mt-3">
+            <button
+              type="button"
+              onClick={() => exportLibraryBackup(tracks, playlists)}
+              className="flex-1 py-2.5 rounded-xl nm-flat text-[13px] text-nm-accent"
+            >
+              백업 내보내기
+            </button>
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="flex-1 py-2.5 rounded-xl nm-flat text-[13px] text-nm-accent"
+            >
+              백업 가져오기
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".json,application/json"
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                e.target.value = "";
+                try {
+                  const text = await file.text();
+                  const data = JSON.parse(text) as LibraryBackup;
+                  if (!data || typeof data !== "object" || typeof data.version !== "number" || data.version !== 1) {
+                    setRestoreStatus({ message: "지원하지 않는 백업 파일 버전입니다.", isError: true });
+                    return;
+                  }
+                  const result = await restoreBackup(data);
+                  setRestoreStatus({
+                    message: `복원 완료: 좋아요 ${result.restoredLikes}개, 재생목록 ${result.restoredPlaylists}개`,
+                    isError: false,
+                  });
+                  void getStorageInfo().then(setStorageInfo);
+                } catch {
+                  setRestoreStatus({ message: "백업 파일을 읽는 중 오류가 발생했습니다.", isError: true });
+                }
+              }}
+              className="hidden"
+            />
+          </div>
+
+          {restoreStatus && (
+            <p className={`text-[12px] mt-2 ${restoreStatus.isError ? "text-red-500" : "text-nm-accent"}`}>
+              {restoreStatus.message}
+            </p>
           )}
         </div>
 
