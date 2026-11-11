@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Music2 } from "lucide-react";
-import { getArtUrl } from "../lib/artCache";
+import { getArtUrl, releaseArtUrl } from "../lib/artCache";
 
 interface CoverArtProps {
   artKey?: string;
@@ -20,6 +20,7 @@ export function CoverArt({ artKey, alt, className = "", rounded = "rounded-xl" }
     });
     return () => {
       cancelled = true;
+      releaseArtUrl(artKey);
     };
   }, [artKey]);
 

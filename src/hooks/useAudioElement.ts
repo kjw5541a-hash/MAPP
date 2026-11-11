@@ -14,6 +14,17 @@ export function useAudioElement() {
   // browser fires for the old resource when a new track starts.
   const lastSrcChangeRef = useRef(0);
 
+  const revokeUrls = () => {
+    if (objectUrlRef.current) {
+      URL.revokeObjectURL(objectUrlRef.current);
+      objectUrlRef.current = null;
+    }
+    if (artUrlRef.current) {
+      URL.revokeObjectURL(artUrlRef.current);
+      artUrlRef.current = null;
+    }
+  };
+
   const currentTrack = usePlayerStore((s) => s.currentTrack());
   const isPlaying = usePlayerStore((s) => s.isPlaying);
   const seekRequest = usePlayerStore((s) => s.seekRequest);
@@ -28,6 +39,7 @@ export function useAudioElement() {
       audio.pause();
       audio.removeAttribute("src");
       if ("mediaSession" in navigator) navigator.mediaSession.metadata = null;
+      revokeUrls();
       return;
     }
 
@@ -145,6 +157,7 @@ export function useAudioElement() {
       audio.removeEventListener("ended", onEnded);
       audio.removeEventListener("pause", onPause);
       audio.removeEventListener("error", onError);
+      revokeUrls();
     };
   }, []);
 }
