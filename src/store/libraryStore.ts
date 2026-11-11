@@ -16,6 +16,7 @@ export interface ImportResult {
   added: number;
   skipped: number;
   failed: number;
+  failedReason?: string;
   quotaExceeded?: boolean;
 }
 
@@ -65,9 +66,11 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
     // Seeded from the library so re-picking a whole folder only brings in what
     // is new, and grows as we go so one selection cannot add the same file twice.
     const seen = new Set(get().tracks.map((t) => t.hash).filter(Boolean) as string[]);
+    const newTracks: Track[] = [];
     let added = 0;
     let skipped = 0;
     let failed = 0;
+    let failedReason: string | undefined;
     let quotaExceeded = false;
 
     set({ importProgress: { active: true, done: 0, total: list.length }, importResult: null });
@@ -82,16 +85,18 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
           const { track, fileBlob, artBlob } = await parseM4aFile(file, hash);
           await db.addTrack(track, fileBlob, artBlob);
           added++;
-          set((state) => ({
-            tracks: [...state.tracks, track].sort((a, b) => a.title.localeCompare(b.title)),
-          }));
+          newTracks.push(track);
         }
       } catch (err) {
         console.error("Failed to import", file.name, err);
         failed++;
         if (isQuotaExceededError(err)) {
           quotaExceeded = true;
+          failedReason = "저장 공간 부족";
           break;
+        }
+        if (!failedReason) {
+          failedReason = err instanceof Error && err.message ? err.message : "가져오기 실패";
         }
       }
       set((state) => ({
@@ -99,9 +104,21 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
       }));
     }
 
+    if (newTracks.length > 0) {
+      set((state) => ({
+        tracks: [...state.tracks, ...newTracks].sort((a, b) => a.title.localeCompare(b.title)),
+      }));
+    }
+
     set({
       importProgress: { active: false, done: 0, total: 0 },
-      importResult: { added, skipped, failed, quotaExceeded },
+      importResult: {
+        added,
+        skipped,
+        failed,
+        failedReason,
+        quotaExceeded,
+      },
     });
   },
 

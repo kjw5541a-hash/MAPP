@@ -17,6 +17,7 @@ export function ImportToast() {
   if (result.skipped > 0) parts.push(`중복 ${result.skipped}곡 건너뜀`);
   if (result.failed > 0) parts.push(`실패 ${result.failed}곡`);
   if (result.quotaExceeded) parts.push("저장 공간이 부족합니다");
+  else if (result.failedReason) parts.push(result.failedReason);
 
   return (
     <div className="px-3 pb-2">
