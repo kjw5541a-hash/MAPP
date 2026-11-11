@@ -14,16 +14,44 @@ export interface ArtistGroup {
   albumCount: number;
 }
 
+export function compareAlbumTracks(a: Track, b: Track): number {
+  const aDisk = a.diskNumber;
+  const bDisk = b.diskNumber;
+  if (typeof aDisk === "number" && typeof bDisk === "number") {
+    if (aDisk !== bDisk) return aDisk - bDisk;
+  } else if (typeof aDisk === "number") {
+    return -1;
+  } else if (typeof bDisk === "number") {
+    return 1;
+  }
+
+  const aTrack = a.trackNumber;
+  const bTrack = b.trackNumber;
+  if (typeof aTrack === "number" && typeof bTrack === "number") {
+    if (aTrack !== bTrack) return aTrack - bTrack;
+  } else if (typeof aTrack === "number") {
+    return -1;
+  } else if (typeof bTrack === "number") {
+    return 1;
+  }
+
+  return a.title.localeCompare(b.title);
+}
+
 export function groupByAlbum(tracks: Track[]): AlbumGroup[] {
   const map = new Map<string, AlbumGroup>();
   for (const track of tracks) {
-    const key = `${track.album}\0${track.artist}`;
+    const artist = track.albumArtist?.trim() || track.artist;
+    const key = `${track.album}\0${artist}`;
     let group = map.get(key);
     if (!group) {
-      group = { key, album: track.album, artist: track.artist, tracks: [] };
+      group = { key, album: track.album, artist, tracks: [] };
       map.set(key, group);
     }
     group.tracks.push(track);
+  }
+  for (const group of map.values()) {
+    group.tracks.sort(compareAlbumTracks);
   }
   return Array.from(map.values()).sort((a, b) => a.album.localeCompare(b.album));
 }

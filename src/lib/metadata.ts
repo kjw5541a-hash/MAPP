@@ -38,6 +38,11 @@ export async function parseM4aFile(file: File, hash: string): Promise<ParsedTrac
     fileKey: id,
     artKey: picture ? `${id}-art` : undefined,
     hash,
+    trackNumber: common?.track?.no ?? undefined,
+    diskNumber: common?.disk?.no ?? undefined,
+    genre: common?.genre?.[0]?.trim() || undefined,
+    year: common?.year ?? undefined,
+    albumArtist: common?.albumartist?.trim() || undefined,
   };
 
   const artBlob = picture

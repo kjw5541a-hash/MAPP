@@ -14,6 +14,11 @@ export interface Track {
   liked?: boolean;
   /** Manual sort key within the liked list, set when a track is liked. */
   likeOrder?: number;
+  trackNumber?: number;
+  diskNumber?: number;
+  genre?: string;
+  year?: number;
+  albumArtist?: string;
 }
 
 export interface Playlist {
