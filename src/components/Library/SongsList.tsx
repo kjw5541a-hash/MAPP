@@ -33,15 +33,21 @@ export function SongsList() {
   const clearSelection = useSongSelectionStore((s) => s.clear);
 
   const [query, setQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
   const [sort, setSort] = useState<SongSort>("title");
   const [pendingDelete, setPendingDelete] = useState<Track | null>(null);
   const [showPlaylistPicker, setShowPlaylistPicker] = useState(false);
   const [showNewPlaylist, setShowNewPlaylist] = useState(false);
   const [newPlaylistTarget, setNewPlaylistTarget] = useState<string | null>(null);
 
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedQuery(query), 200);
+    return () => clearTimeout(timer);
+  }, [query]);
+
   const filtered = useMemo(
-    () => sortTracks(query.trim() ? searchTracks(tracks, query) : tracks, sort),
-    [tracks, query, sort],
+    () => sortTracks(debouncedQuery.trim() ? searchTracks(tracks, debouncedQuery) : tracks, sort),
+    [tracks, debouncedQuery, sort],
   );
 
   // Cancelling selection (e.g. the shared header's "취소" button) clears the

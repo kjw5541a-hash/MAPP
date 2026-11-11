@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ChevronDown, Search, Check } from "lucide-react";
 import { useLibraryStore } from "../../store/libraryStore";
 import { searchTracks } from "../../lib/derive";
@@ -18,12 +18,18 @@ export function TrackPickerModal({ playlistId, existingTrackIds, onClose }: Trac
   const tracks = useLibraryStore((s) => s.tracks);
   const addTracksToPlaylist = useLibraryStore((s) => s.addTracksToPlaylist);
   const [query, setQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedQuery(query), 200);
+    return () => clearTimeout(timer);
+  }, [query]);
 
   const existing = useMemo(() => new Set(existingTrackIds), [existingTrackIds]);
   const list = useMemo(
-    () => (query.trim() ? searchTracks(tracks, query) : tracks),
-    [tracks, query],
+    () => (debouncedQuery.trim() ? searchTracks(tracks, debouncedQuery) : tracks),
+    [tracks, debouncedQuery],
   );
 
   const toggle = (id: string) =>
