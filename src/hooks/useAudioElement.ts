@@ -10,6 +10,9 @@ export function useAudioElement() {
   }
   const objectUrlRef = useRef<string | null>(null);
   const artUrlRef = useRef<string | null>(null);
+  // Timestamp of the last src swap, to filter out the stale pause event the
+  // browser fires for the old resource when a new track starts.
+  const lastSrcChangeRef = useRef(0);
 
   const currentTrack = usePlayerStore((s) => s.currentTrack());
   const isPlaying = usePlayerStore((s) => s.isPlaying);
@@ -39,6 +42,7 @@ export function useAudioElement() {
       const url = URL.createObjectURL(fileBlob);
       objectUrlRef.current = url;
       audio.src = url;
+      lastSrcChangeRef.current = Date.now();
       audio.currentTime = 0;
 
       if (artUrlRef.current) URL.revokeObjectURL(artUrlRef.current);
@@ -56,7 +60,11 @@ export function useAudioElement() {
       }
 
       if (usePlayerStore.getState().isPlaying) {
-        audio.play().catch(() => {});
+        audio.play().catch(() => {
+          const { setPlaying, setPlaybackError } = usePlayerStore.getState();
+          setPlaying(false);
+          setPlaybackError("재생할 수 없습니다. 다시 눌러주세요.");
+        });
       }
     })();
 
@@ -70,7 +78,11 @@ export function useAudioElement() {
   useEffect(() => {
     const audio = audioRef.current!;
     if (isPlaying) {
-      audio.play().catch(() => {});
+      audio.play().catch(() => {
+        const { setPlaying, setPlaybackError } = usePlayerStore.getState();
+        setPlaying(false);
+        setPlaybackError("재생할 수 없습니다. 다시 눌러주세요.");
+      });
     } else {
       audio.pause();
     }
@@ -95,10 +107,20 @@ export function useAudioElement() {
     const onTimeUpdate = () => setProgress(audio.currentTime);
     const onLoadedMetadata = () => setDuration(audio.duration || 0);
     const onEnded = () => onTrackEnded();
+    // Swapping src on a playing element makes the browser fire a pause event
+    // for the old resource; that stale event must not stop the new track.
+    // A genuine system pause (call, alarm) arrives well after the swap.
+    const onPause = () => {
+      if (Date.now() - lastSrcChangeRef.current < 1000) return;
+      setPlaying(false);
+    };
+    const onError = () => setPlaying(false);
 
     audio.addEventListener("timeupdate", onTimeUpdate);
     audio.addEventListener("loadedmetadata", onLoadedMetadata);
     audio.addEventListener("ended", onEnded);
+    audio.addEventListener("pause", onPause);
+    audio.addEventListener("error", onError);
 
     if ("mediaSession" in navigator) {
       navigator.mediaSession.setActionHandler("play", () => setPlaying(true));
@@ -121,6 +143,8 @@ export function useAudioElement() {
       audio.removeEventListener("timeupdate", onTimeUpdate);
       audio.removeEventListener("loadedmetadata", onLoadedMetadata);
       audio.removeEventListener("ended", onEnded);
+      audio.removeEventListener("pause", onPause);
+      audio.removeEventListener("error", onError);
     };
   }, []);
 }

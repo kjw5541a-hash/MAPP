@@ -52,6 +52,7 @@ interface PlayerState {
   source: QueueSource | null;
   showNowPlaying: boolean;
   showLyrics: boolean;
+  playbackError: string | null;
 
   currentTrack: () => Track | null;
   reset: () => void;
@@ -59,6 +60,7 @@ interface PlayerState {
   playShuffled: (tracks: Track[], source: QueueSource) => void;
   togglePlay: () => void;
   setPlaying: (playing: boolean) => void;
+  setPlaybackError: (error: string | null) => void;
   next: () => void;
   prev: () => void;
   onTrackEnded: () => void;
@@ -85,6 +87,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   source: null,
   showNowPlaying: false,
   showLyrics: false,
+  playbackError: null,
 
   currentTrack: () => {
     const { queue, playOrder, orderPos } = get();
@@ -103,6 +106,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       source: null,
       showNowPlaying: false,
       showLyrics: false,
+      playbackError: null,
     }),
 
   playQueue: (tracks, startIndex, source) => {
@@ -114,6 +118,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       source,
       isPlaying: true,
       progress: 0,
+      playbackError: null,
     });
   },
 
@@ -127,18 +132,20 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       shuffle: true,
       isPlaying: true,
       progress: 0,
+      playbackError: null,
     });
   },
 
-  togglePlay: () => set((s) => ({ isPlaying: s.queue.length > 0 && !s.isPlaying })),
-  setPlaying: (playing) => set({ isPlaying: playing }),
+  togglePlay: () => set((s) => ({ isPlaying: s.queue.length > 0 && !s.isPlaying, playbackError: null })),
+  setPlaying: (playing) => set({ isPlaying: playing, ...(playing ? { playbackError: null } : {}) }),
+  setPlaybackError: (playbackError) => set({ playbackError }),
 
   next: () => {
     const { orderPos, playOrder, repeat } = get();
     if (orderPos + 1 < playOrder.length) {
-      set({ orderPos: orderPos + 1, progress: 0, isPlaying: true });
+      set({ orderPos: orderPos + 1, progress: 0, isPlaying: true, playbackError: null });
     } else if (repeat === "all") {
-      set({ orderPos: 0, progress: 0, isPlaying: true });
+      set({ orderPos: 0, progress: 0, isPlaying: true, playbackError: null });
     } else {
       set({ isPlaying: false, progress: 0 });
     }
@@ -147,13 +154,13 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   prev: () => {
     const { orderPos, progress } = get();
     if (progress > 3) {
-      set({ progress: 0, seekRequest: 0 });
+      set({ progress: 0, seekRequest: 0, playbackError: null });
       return;
     }
     if (orderPos > 0) {
-      set({ orderPos: orderPos - 1, progress: 0 });
+      set({ orderPos: orderPos - 1, progress: 0, playbackError: null });
     } else {
-      set({ progress: 0, seekRequest: 0 });
+      set({ progress: 0, seekRequest: 0, playbackError: null });
     }
   },
 

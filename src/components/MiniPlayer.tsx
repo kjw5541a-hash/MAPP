@@ -10,6 +10,7 @@ export function MiniPlayer() {
   const setShowNowPlaying = usePlayerStore((s) => s.setShowNowPlaying);
   const progress = usePlayerStore((s) => s.progress);
   const duration = usePlayerStore((s) => s.duration);
+  const playbackError = usePlayerStore((s) => s.playbackError);
 
   if (!currentTrack) return null;
 
@@ -27,7 +28,11 @@ export function MiniPlayer() {
         <CoverArt artKey={currentTrack.artKey} alt={currentTrack.title} className="w-10 h-10" rounded="rounded-lg" />
         <div className="min-w-0 flex-1">
           <p className="truncate text-[14px] font-medium">{currentTrack.title}</p>
-          <p className="truncate text-[12px] text-nm-text-muted">{currentTrack.artist}</p>
+          {playbackError ? (
+            <p className="truncate text-[12px] text-red-500">{playbackError}</p>
+          ) : (
+            <p className="truncate text-[12px] text-nm-text-muted">{currentTrack.artist}</p>
+          )}
         </div>
         <button
           type="button"
