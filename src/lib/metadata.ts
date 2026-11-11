@@ -18,14 +18,9 @@ export async function hashBuffer(data: BufferSource): Promise<string> {
     .join("");
 }
 
-/** Identifies a file by its bytes, so a rename still counts as the same track. */
-export async function hashFile(file: File): Promise<string> {
-  return hashBuffer(await file.arrayBuffer());
-}
-
-export async function parseM4aFile(file: File, hash: string): Promise<ParsedTrack> {
+export async function parseM4aFile(blob: Blob, fileName: string, hash: string): Promise<ParsedTrack> {
   const id = crypto.randomUUID();
-  const metadata = await parseBlob(file, { skipCovers: false }).catch(() => null);
+  const metadata = await parseBlob(blob, { skipCovers: false }).catch(() => null);
 
   const common = metadata?.common;
   const picture = common?.picture?.[0];
@@ -35,7 +30,7 @@ export async function parseM4aFile(file: File, hash: string): Promise<ParsedTrac
 
   const track: Track = {
     id,
-    title: common?.title?.trim() || stripExtension(file.name),
+    title: common?.title?.trim() || stripExtension(fileName),
     artist: common?.artist?.trim() || "Unknown Artist",
     album: common?.album?.trim() || "Unknown Album",
     duration: metadata?.format.duration ?? 0,
@@ -55,5 +50,5 @@ export async function parseM4aFile(file: File, hash: string): Promise<ParsedTrac
     ? new Blob([picture.data as BlobPart], { type: picture.format })
     : undefined;
 
-  return { track, fileBlob: file, artBlob };
+  return { track, fileBlob: blob, artBlob };
 }

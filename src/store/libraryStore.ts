@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import type { Track, Playlist, LibraryBackup, RestoreResult } from "../types";
 import * as db from "../lib/db";
-import { parseM4aFile, hashFile } from "../lib/metadata";
+import { parseM4aFile, hashBuffer } from "../lib/metadata";
 import { clearArtCache } from "../lib/artCache";
 import { usePlayerStore } from "./playerStore";
 import { requestStoragePersistence, isQuotaExceededError } from "../lib/storage";
@@ -90,13 +90,16 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
         });
 
         const processPromise = (async () => {
-          const hash = await hashFile(file);
+          const buffer = await file.arrayBuffer();
+          if (timedOut) return;
+          const hash = await hashBuffer(buffer);
           if (timedOut) return;
           if (seen.has(hash)) {
             skipped++;
           } else {
             seen.add(hash);
-            const { track, fileBlob, artBlob } = await parseM4aFile(file, hash);
+            const fileBlob = new Blob([buffer], { type: file.type });
+            const { track, artBlob } = await parseM4aFile(fileBlob, file.name, hash);
             if (timedOut) {
               // Never added to the library: drop the hash so a later
               // re-import retries this file instead of skipping it as a duplicate.
