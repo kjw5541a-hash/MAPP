@@ -11,12 +11,16 @@ function stripExtension(filename: string) {
   return filename.replace(/\.[^./]+$/, "");
 }
 
-/** Identifies a file by its bytes, so a rename still counts as the same track. */
-export async function hashFile(file: File): Promise<string> {
-  const digest = await crypto.subtle.digest("SHA-256", await file.arrayBuffer());
+export async function hashBuffer(data: BufferSource): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", data);
   return Array.from(new Uint8Array(digest))
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
+}
+
+/** Identifies a file by its bytes, so a rename still counts as the same track. */
+export async function hashFile(file: File): Promise<string> {
+  return hashBuffer(await file.arrayBuffer());
 }
 
 export async function parseM4aFile(file: File, hash: string): Promise<ParsedTrack> {
@@ -26,6 +30,8 @@ export async function parseM4aFile(file: File, hash: string): Promise<ParsedTrac
   const common = metadata?.common;
   const picture = common?.picture?.[0];
   const lyricsTag = common?.lyrics?.find((l) => l.text);
+  // picture.data is Uint8Array<ArrayBufferLike>; copy into a plain ArrayBuffer-backed view for crypto.subtle.
+  const artKey = picture ? await hashBuffer(new Uint8Array(picture.data)) : undefined;
 
   const track: Track = {
     id,
@@ -36,7 +42,7 @@ export async function parseM4aFile(file: File, hash: string): Promise<ParsedTrac
     lyrics: lyricsTag?.text?.trim() || undefined,
     dateAdded: Date.now(),
     fileKey: id,
-    artKey: picture ? `${id}-art` : undefined,
+    artKey,
     hash,
     trackNumber: common?.track?.no ?? undefined,
     diskNumber: common?.disk?.no ?? undefined,

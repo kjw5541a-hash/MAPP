@@ -27,10 +27,17 @@ function getDB() {
 export async function addTrack(track: Track, fileBlob: Blob, artBlob?: Blob) {
   const db = await getDB();
   const tx = db.transaction(["tracks", "trackFiles", "trackArt"], "readwrite");
+  const saveArt = async () => {
+    if (!artBlob || !track.artKey) return;
+    const existing = await tx.objectStore("trackArt").getKey(track.artKey);
+    if (!existing) {
+      await tx.objectStore("trackArt").put(artBlob, track.artKey);
+    }
+  };
   await Promise.all([
     tx.objectStore("tracks").put(track),
     tx.objectStore("trackFiles").put(fileBlob, track.fileKey),
-    artBlob && track.artKey ? tx.objectStore("trackArt").put(artBlob, track.artKey) : Promise.resolve(),
+    saveArt(),
     tx.done,
   ]);
 }
@@ -62,9 +69,17 @@ export async function deleteTrack(track: Track) {
   await Promise.all([
     tx.objectStore("tracks").delete(track.id),
     tx.objectStore("trackFiles").delete(track.fileKey),
-    track.artKey ? tx.objectStore("trackArt").delete(track.artKey) : Promise.resolve(),
-    tx.done,
   ]);
+
+  if (track.artKey) {
+    const remainingTracks = await tx.objectStore("tracks").getAll();
+    const hasOtherRef = remainingTracks.some((t) => t.id !== track.id && t.artKey === track.artKey);
+    if (!hasOtherRef) {
+      await tx.objectStore("trackArt").delete(track.artKey);
+    }
+  }
+
+  await tx.done;
 }
 
 export async function clearAll() {
