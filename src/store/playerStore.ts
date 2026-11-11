@@ -72,6 +72,7 @@ interface PlayerState {
   setDuration: (time: number) => void;
   setShowNowPlaying: (show: boolean) => void;
   setShowLyrics: (show: boolean) => void;
+  removeTrackFromQueue: (trackId: string) => void;
 }
 
 export const usePlayerStore = create<PlayerState>((set, get) => ({
@@ -200,4 +201,49 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   setDuration: (time) => set({ duration: time }),
   setShowNowPlaying: (show) => set({ showNowPlaying: show }),
   setShowLyrics: (show) => set({ showLyrics: show }),
+
+  removeTrackFromQueue: (trackId) => {
+    const { queue, playOrder, orderPos, isPlaying, progress } = get();
+    const queueIndex = queue.findIndex((t) => t.id === trackId);
+    if (queueIndex === -1) return;
+
+    const removedOrderPos = playOrder.indexOf(queueIndex);
+    if (removedOrderPos === -1) return;
+
+    const newQueue = queue.filter((_, i) => i !== queueIndex);
+    if (newQueue.length === 0) {
+      get().reset();
+      return;
+    }
+
+    const newPlayOrder = playOrder
+      .filter((_, i) => i !== removedOrderPos)
+      .map((idx) => (idx > queueIndex ? idx - 1 : idx));
+
+    const isCurrent = removedOrderPos === orderPos;
+    const isLast = removedOrderPos === playOrder.length - 1;
+
+    let newOrderPos = orderPos;
+    let newIsPlaying = isPlaying;
+    let newProgress = progress;
+
+    if (removedOrderPos < orderPos) {
+      newOrderPos = orderPos - 1;
+    } else if (isCurrent) {
+      newProgress = 0;
+      if (isLast) {
+        newIsPlaying = false;
+        newOrderPos = 0;
+      }
+    }
+
+    set({
+      queue: newQueue,
+      playOrder: newPlayOrder,
+      orderPos: newOrderPos,
+      isPlaying: newIsPlaying,
+      progress: newProgress,
+      playbackError: null,
+    });
+  },
 }));

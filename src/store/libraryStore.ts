@@ -3,6 +3,7 @@ import type { Track, Playlist } from "../types";
 import * as db from "../lib/db";
 import { parseM4aFile, hashFile } from "../lib/metadata";
 import { clearArtCache } from "../lib/artCache";
+import { usePlayerStore } from "./playerStore";
 
 interface ImportProgress {
   active: boolean;
@@ -107,6 +108,7 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
     }));
     await Promise.all(playlists.map((p) => db.savePlaylist(p)));
     set((state) => ({ tracks: state.tracks.filter((t) => t.id !== id), playlists }));
+    usePlayerStore.getState().removeTrackFromQueue(id);
   },
 
   clearLibrary: async () => {
