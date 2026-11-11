@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
-import { ChevronDown, Check } from "lucide-react";
-import { useSettingsStore, THEMES } from "../../store/settingsStore";
+import { ChevronDown } from "lucide-react";
+import { useSettingsStore } from "../../store/settingsStore";
 import { useLibraryStore } from "../../store/libraryStore";
 import { usePlayerStore } from "../../store/playerStore";
 import { listModels, type GeminiModel } from "../../lib/recommend";
@@ -10,8 +10,6 @@ import { exportLibraryBackup } from "../../lib/backup";
 import type { LibraryBackup } from "../../types";
 
 export function SettingsSheet({ onClose }: { onClose: () => void }) {
-  const theme = useSettingsStore((s) => s.theme);
-  const setTheme = useSettingsStore((s) => s.setTheme);
   const apiKey = useSettingsStore((s) => s.geminiApiKey);
   const setApiKey = useSettingsStore((s) => s.setGeminiApiKey);
   const model = useSettingsStore((s) => s.geminiModel);
@@ -48,29 +46,6 @@ export function SettingsSheet({ onClose }: { onClose: () => void }) {
       </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain nm-scrollbar-none px-4 pb-6">
-        <h2 className="text-[13px] text-nm-text-muted px-2 pt-4 pb-2">테마</h2>
-        <div className="flex flex-col gap-2">
-          {THEMES.map((t) => {
-            const active = t.id === theme;
-            return (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => setTheme(t.id)}
-                className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-left transition-all ${
-                  active ? "nm-pressed" : "nm-flat"
-                }`}
-              >
-                <div className="min-w-0 flex-1">
-                  <p className={`text-[15px] ${active ? "text-nm-accent" : ""}`}>{t.label}</p>
-                  <p className="text-[12px] text-nm-text-muted">{t.description}</p>
-                </div>
-                {active && <Check className="w-5 h-5 text-nm-accent shrink-0" />}
-              </button>
-            );
-          })}
-        </div>
-
         <h2 className="text-[13px] text-nm-text-muted px-2 pt-8 pb-2">AI 추천</h2>
         <div className="nm-flat rounded-2xl px-4 py-3">
           <label className="text-[14px]" htmlFor="gemini-key">
