@@ -15,7 +15,7 @@ export function ImportToast() {
   if (progress.active) {
     return (
       <div className="px-3 pb-2">
-        <div className="w-full nm-flat rounded-2xl px-4 py-2.5 text-[13px] text-nm-text-muted text-center">
+        <div className="w-full bg-am-fill border border-am-separator rounded-2xl px-4 py-2.5 text-[13px] text-am-muted text-center">
           {progress.done}/{progress.total}곡 가져오는 중…
         </div>
       </div>
@@ -35,7 +35,7 @@ export function ImportToast() {
       <button
         type="button"
         onClick={dismiss}
-        className="w-full nm-flat rounded-2xl px-4 py-2.5 text-[13px] text-nm-text-muted"
+        className="w-full bg-am-fill border border-am-separator rounded-2xl px-4 py-2.5 text-[13px] text-am-text text-center hover:opacity-80 transition-opacity"
       >
         {parts.join(" · ")}
       </button>

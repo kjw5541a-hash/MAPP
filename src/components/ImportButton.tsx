@@ -57,7 +57,7 @@ export function ImportButton({ variant = "icon" }: ImportButtonProps) {
             aria-label="곡 추가"
             title="곡 추가"
             onClick={() => fileInputRef.current?.click()}
-            className="w-9 h-9 rounded-full nm-flat flex items-center justify-center shrink-0"
+            className="w-9 h-9 am-icon-btn flex items-center justify-center shrink-0 text-am-accent"
           >
             <Plus className="w-5 h-5" />
           </button>
@@ -67,7 +67,7 @@ export function ImportButton({ variant = "icon" }: ImportButtonProps) {
               aria-label="폴더 추가"
               title="폴더 추가"
               onClick={() => folderInputRef.current?.click()}
-              className="w-9 h-9 rounded-full nm-flat flex items-center justify-center shrink-0"
+              className="w-9 h-9 am-icon-btn flex items-center justify-center shrink-0 text-am-accent"
             >
               <FolderPlus className="w-5 h-5" />
             </button>
@@ -78,7 +78,7 @@ export function ImportButton({ variant = "icon" }: ImportButtonProps) {
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="flex items-center gap-2 px-6 py-3 rounded-full nm-raised text-nm-accent font-medium"
+            className="flex items-center gap-2 px-6 py-3 rounded-full bg-am-accent text-white font-medium hover:bg-am-accent/90 transition-colors"
           >
             <Plus className="w-4 h-4" /> m4a 파일 추가
           </button>
@@ -86,7 +86,7 @@ export function ImportButton({ variant = "icon" }: ImportButtonProps) {
             <button
               type="button"
               onClick={() => folderInputRef.current?.click()}
-              className="flex items-center gap-2 px-6 py-3 rounded-full nm-raised text-nm-accent font-medium"
+              className="flex items-center gap-2 px-6 py-3 rounded-full bg-am-fill text-am-text font-medium hover:bg-am-fill/80 transition-colors"
             >
               <FolderPlus className="w-4 h-4" /> 폴더 추가
             </button>

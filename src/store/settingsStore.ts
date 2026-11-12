@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { DEFAULT_MODEL } from "../lib/recommend";
 
 export const THEMES = [
-  { id: "soft", label: "소프트", description: "부드러운 회색 뉴모피즘" },
+  { id: "apple-music", label: "Apple Music", description: "애플뮤직 라이트" },
 ] as const;
 
 export type ThemeId = (typeof THEMES)[number]["id"];
@@ -18,15 +18,14 @@ function isThemeId(value: string | null): value is ThemeId {
 function initialTheme(): ThemeId {
   const saved = localStorage.getItem(STORAGE_KEY);
   if (isThemeId(saved)) return saved;
-  return "soft";
+  return "apple-music";
 }
 
 function apply(theme: ThemeId) {
   const root = document.documentElement;
   root.dataset.theme = theme;
   // Keeps the iOS status bar and any area outside the viewport matching.
-  const bg = getComputedStyle(root).getPropertyValue("--nm-bg").trim();
-  if (bg) document.querySelector('meta[name="theme-color"]')?.setAttribute("content", bg);
+  document.querySelector('meta[name="theme-color"]')?.setAttribute("content", "#ffffff");
 }
 
 interface SettingsState {

@@ -52,7 +52,7 @@ export function SwipeRow({
   return (
     <div
       ref={ref as React.RefObject<HTMLDivElement>}
-      className={`relative overflow-hidden rounded-2xl touch-row shrink-0 ${className}`}
+      className={`relative overflow-hidden touch-row shrink-0 ${className}`}
       style={{
         zIndex: active ? 10 : undefined,
         transform: ty ? `translateY(${ty}px)` : undefined,
@@ -67,17 +67,16 @@ export function SwipeRow({
           close();
           onDeleteRequest();
         }}
-        className="absolute right-0 top-0 h-full flex items-center justify-center text-white bg-red-500"
+        className="absolute right-0 top-0 h-full flex items-center justify-center text-white bg-am-accent"
         style={{ width: SWIPE_REVEAL_PX }}
       >
         <Trash2 className="w-5 h-5" />
       </button>
       <div
-        className="bg-nm-bg"
+        className="bg-am-bg"
         style={{
           transform: `translateX(${offsetX}px)`,
           transition: swiping ? "none" : "transform 200ms ease",
-          boxShadow: active ? "var(--nm-raised)" : undefined,
           borderRadius: "inherit",
         }}
       >

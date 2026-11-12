@@ -1,36 +1,32 @@
 @import "tailwindcss";
 
 @theme {
-  --color-nm-bg: var(--nm-bg);
-  --color-nm-text: var(--nm-text);
-  --color-nm-text-muted: var(--nm-text-muted);
-  --color-nm-accent: var(--nm-accent);
+  --color-am-bg: #FFFFFF;
+  --color-am-text: #000000;
+  --color-am-muted: #8E8E93;
+  --color-am-accent: #FA2D48;
+  --color-am-separator: #E5E5EA;
+  --color-am-fill: #F2F2F7;
 
   --font-family-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Pretendard", system-ui, sans-serif;
 }
 
-/* Every theme declares the same variables, so switching one attribute on
-   <html> restyles the app without any component knowing which theme is active.
-   Depth is each theme's own decision: they supply complete shadow strings
-   rather than tinting one fixed neumorphic recipe, which is what lets a puffy
-   clay surface and a flat outlined sticker share the same primitives. */
+/* Apple Music light theme tokens */
 :root,
-:root[data-theme="soft"] {
+:root[data-theme="apple-music"] {
   color-scheme: light;
-  --nm-bg: #e6e9ef;
-  --nm-surface: #e6e9ef;
-  --nm-text: #3a3f4b;
-  --nm-text-muted: #7c8291;
-  --nm-accent: #6c7ae0;
-  --nm-border: 0 solid transparent;
-  --nm-raised: 6px 6px 12px #b9bec9, -6px -6px 12px #ffffff;
-  --nm-flat: 3px 3px 6px #b9bec9, -3px -3px 6px #ffffff;
-  --nm-pressed: inset 4px 4px 8px #b9bec9, inset -4px -4px 8px #ffffff;
-  --nm-inset: inset 2px 2px 4px #b9bec9, inset -2px -2px 4px #ffffff;
-  --nm-thumb: 2px 2px 4px #b9bec9, -2px -2px 4px #ffffff;
-  --nm-glow: 0 0 0 0 transparent;
-  --nm-accent-fill: var(--nm-surface);
-  --nm-accent-on-fill: var(--nm-accent);
+  --color-am-bg: #FFFFFF;
+  --color-am-text: #000000;
+  --color-am-muted: #8E8E93;
+  --color-am-accent: #FA2D48;
+  --color-am-separator: #E5E5EA;
+  --color-am-fill: #F2F2F7;
+  --am-bg: #FFFFFF;
+  --am-text: #000000;
+  --am-muted: #8E8E93;
+  --am-accent: #FA2D48;
+  --am-separator: #E5E5EA;
+  --am-fill: #F2F2F7;
 }
 
 * {
@@ -72,50 +68,9 @@ body,
 
 body {
   margin: 0;
-  background: var(--nm-bg);
-  color: var(--nm-text);
+  background: var(--am-bg, #FFFFFF);
+  color: var(--am-text, #000000);
   font-family: var(--font-family-sans);
-}
-
-/* Primitives carry no look of their own: each theme supplies the border and
-   the complete shadow, so a new theme never needs a new class. */
-.nm-raised {
-  background: var(--nm-surface);
-  border: var(--nm-border);
-  box-shadow: var(--nm-raised);
-}
-
-.nm-flat {
-  background: var(--nm-surface);
-  border: var(--nm-border);
-  box-shadow: var(--nm-flat);
-}
-
-.nm-pressed {
-  background: var(--nm-surface);
-  border: var(--nm-border);
-  box-shadow: var(--nm-pressed), var(--nm-glow);
-}
-
-.nm-inset-sm {
-  background: var(--nm-surface);
-  border: var(--nm-border);
-  box-shadow: var(--nm-inset);
-}
-
-/* The one filled control on screen: play/pause. */
-.nm-accent-btn {
-  background: var(--nm-accent-fill);
-  color: var(--nm-accent-on-fill);
-  border: var(--nm-border);
-  box-shadow: var(--nm-raised), var(--nm-glow);
-}
-
-.nm-scrollbar-none {
-  scrollbar-width: none;
-}
-.nm-scrollbar-none::-webkit-scrollbar {
-  display: none;
 }
 
 /* These outrank Tailwind's padding utilities in the cascade and would silently
@@ -129,45 +84,83 @@ body {
   padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 0.5rem);
 }
 
-/* Tab bar only needs a sliver of clearance from the home indicator, not the
-   full safe-area inset, so it can sit lower and use more of the screen. */
-.tabbar-safe-bottom {
-  padding-bottom: calc(env(safe-area-inset-bottom, 0px) * 0.35 + 4px);
+/* Apple Music light theme utility classes */
+.am-icon-btn {
+  background: transparent;
+  border: none;
+  box-shadow: none;
 }
 
-/* Neumorphic range input (progress / seek bar) */
-.nm-progress {
+.am-chip {
+  background: #F2F2F7;
+  border-radius: 9999px;
+  border: none;
+  box-shadow: none;
+}
+
+.am-search {
+  background: #F2F2F7;
+  border-radius: 10px;
+  border: none;
+  box-shadow: none;
+}
+
+.am-accent-btn {
+  background: #FA2D48;
+  color: #FFFFFF;
+  border-radius: 9999px;
+  border: none;
+  box-shadow: none;
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.am-tabbar {
+  background: rgba(255, 255, 255, 0.85);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+  border-top: 1px solid #E5E5EA;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.am-progress {
   -webkit-appearance: none;
   appearance: none;
   width: 100%;
-  height: 6px;
+  height: 4px;
   border-radius: 999px;
   background: linear-gradient(
     to right,
-    var(--nm-accent) var(--progress-pct, 0%),
-    transparent var(--progress-pct, 0%)
+    #FA2D48 var(--progress-pct, 0%),
+    #E5E5EA var(--progress-pct, 0%)
   );
-  box-shadow: var(--nm-inset);
+  outline: none;
 }
-.nm-progress::-webkit-slider-thumb {
+.am-progress::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 16px;
-  height: 16px;
+  width: 10px;
+  height: 10px;
   border-radius: 999px;
-  background: var(--nm-surface);
-  box-shadow: var(--nm-thumb);
+  background: #FA2D48;
+  border: none;
+  box-shadow: none;
   cursor: pointer;
 }
-.nm-progress::-moz-range-thumb {
-  width: 16px;
-  height: 16px;
+.am-progress::-moz-range-thumb {
+  width: 10px;
+  height: 10px;
   border: none;
   border-radius: 999px;
-  background: var(--nm-surface);
-  box-shadow: var(--nm-thumb);
+  background: #FA2D48;
+  box-shadow: none;
   cursor: pointer;
 }
-.nm-progress:disabled {
+.am-progress:disabled {
   opacity: 0.5;
 }

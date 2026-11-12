@@ -30,10 +30,10 @@ export function ProgressBar() {
         onMouseUp={commit}
         onTouchEnd={commit}
         disabled={max === 0}
-        className="nm-progress w-full"
+        className="am-progress w-full"
         style={{ ["--progress-pct" as string]: `${max ? (value / max) * 100 : 0}%` }}
       />
-      <div className="flex justify-between text-[12px] text-nm-text-muted tabular-nums mt-1">
+      <div className="flex justify-between text-[12px] text-am-muted tabular-nums mt-1">
         <span>{formatDuration(value)}</span>
         <span>-{formatDuration(Math.max(max - value, 0))}</span>
       </div>

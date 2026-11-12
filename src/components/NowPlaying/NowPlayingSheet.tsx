@@ -46,7 +46,7 @@ export function NowPlayingSheet() {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-nm-bg safe-top safe-bottom">
+    <div className="fixed inset-0 z-50 flex flex-col bg-am-bg safe-top safe-bottom">
       <div
         className="flex items-center justify-between px-4 pt-3 pb-1 shrink-0"
         onTouchStart={onHeaderTouchStart}
@@ -56,17 +56,17 @@ export function NowPlayingSheet() {
           type="button"
           aria-label="닫기"
           onClick={() => setShowNowPlaying(false)}
-          className="w-9 h-9 rounded-full nm-flat flex items-center justify-center"
+          className="w-9 h-9 am-icon-btn flex items-center justify-center text-am-text"
         >
           <ChevronDown className="w-5 h-5" />
         </button>
-        <p className="text-xs text-nm-text-muted truncate max-w-[50%]">{currentTrack.album}</p>
+        <p className="text-xs text-am-muted truncate max-w-[50%]">{currentTrack.album}</p>
         <button
           type="button"
           aria-label={showLyrics ? "앨범 커버 보기" : "가사 보기"}
           onClick={() => setShowLyrics(!showLyrics)}
-          className={`w-9 h-9 rounded-full nm-flat flex items-center justify-center ${
-            showLyrics ? "text-nm-accent" : ""
+          className={`w-9 h-9 am-icon-btn flex items-center justify-center ${
+            showLyrics ? "text-am-accent" : "text-am-text"
           }`}
         >
           {showLyrics ? <Disc3 className="w-5 h-5" /> : <AlignLeft className="w-5 h-5" />}
@@ -93,8 +93,8 @@ export function NowPlayingSheet() {
         </div>
 
         <div className="w-full max-w-sm text-center">
-          <h2 className="text-xl font-semibold truncate">{currentTrack.title}</h2>
-          <p className="text-nm-text-muted truncate mt-1">{currentTrack.artist}</p>
+          <h2 className="text-xl font-bold text-am-text truncate">{currentTrack.title}</h2>
+          <p className="text-am-muted truncate mt-1">{currentTrack.artist}</p>
         </div>
 
         <div className="w-full max-w-sm">
@@ -109,9 +109,9 @@ export function NowPlayingSheet() {
             type="button"
             aria-label={liked ? "좋아요 취소" : "좋아요"}
             onClick={() => toggleLiked(currentTrack.id)}
-            className="w-11 h-11 rounded-full flex items-center justify-center"
+            className="w-11 h-11 am-icon-btn flex items-center justify-center"
           >
-            <Heart className={`w-4.5 h-4.5 ${liked ? "fill-nm-accent text-nm-accent" : "text-nm-text-muted"}`} />
+            <Heart className={`w-4.5 h-4.5 ${liked ? "fill-am-accent text-am-accent" : "text-am-muted"}`} />
           </button>
         </div>
       </div>

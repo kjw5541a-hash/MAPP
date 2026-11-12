@@ -75,25 +75,25 @@ function App() {
         <div className={`flex items-center justify-between px-4 pb-2 shrink-0 ${updatePending ? "pt-2" : "safe-top"}`}>
           {songsSelecting ? (
             <>
-              <h1 className="text-lg font-semibold">{selectedCount}개 선택됨</h1>
+              <h1 className="text-lg font-semibold text-am-text">{selectedCount}개 선택됨</h1>
               <button
                 type="button"
                 onClick={clearSelection}
-                className="flex items-center gap-1 text-nm-accent text-[14px] font-medium"
+                className="flex items-center gap-1 text-am-accent text-[14px] font-medium"
               >
                 <X className="w-4 h-4" /> 취소
               </button>
             </>
           ) : (
             <>
-              <h1 className="text-2xl font-bold">{TAB_TITLES[tab]}</h1>
+              <h1 className="text-[28px] font-bold text-am-text">{TAB_TITLES[tab]}</h1>
               <div className="flex items-center gap-2">
                 {SHOW_IMPORT.includes(tab) && <ImportButton />}
                 <button
                   type="button"
                   aria-label="설정"
                   onClick={() => setShowSettings(true)}
-                  className="w-9 h-9 rounded-full nm-flat flex items-center justify-center shrink-0"
+                  className="w-9 h-9 am-icon-btn flex items-center justify-center shrink-0"
                 >
                   <SettingsIcon className="w-5 h-5" />
                 </button>
@@ -108,7 +108,7 @@ function App() {
             {tab === "songs" && <SongsList />}
           </div>
         ) : (
-          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain nm-scrollbar-none">
+          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain no-scrollbar">
             {tab === "playlists" && <PlaylistsList />}
             {tab === "liked" && <LikedSongsView />}
           </div>
@@ -118,7 +118,7 @@ function App() {
   };
 
   if (!ready) {
-    return <div className="fixed inset-0 bg-nm-bg" />;
+    return <div className="fixed inset-0 bg-am-bg" />;
   }
 
   return (

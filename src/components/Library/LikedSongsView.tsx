@@ -32,10 +32,10 @@ export function LikedSongsView() {
   if (tracks.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center gap-3 h-full px-8 text-center">
-        <div className="w-16 h-16 rounded-3xl nm-raised flex items-center justify-center text-nm-text-muted">
+        <div className="w-16 h-16 rounded-2xl bg-am-fill flex items-center justify-center text-am-muted">
           <Heart className="w-7 h-7" />
         </div>
-        <p className="text-nm-text-muted text-sm">
+        <p className="text-am-muted text-sm">
           곡의 하트 아이콘을 눌러 좋아요를 표시하면
           <br />
           여기에 모입니다.
@@ -45,7 +45,7 @@ export function LikedSongsView() {
   }
 
   return (
-    <div className="px-4 py-2 flex flex-col gap-1">
+    <div className="px-4 py-2 flex flex-col">
       {tracks.map((track, i) => (
         <div key={track.id} ref={(el) => { rowRefs.current[track.id] = el; }}>
           <ReorderableTrackRow

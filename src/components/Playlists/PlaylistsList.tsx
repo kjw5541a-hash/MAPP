@@ -39,27 +39,25 @@ function PlaylistRow({
   return (
     <div
       ref={ref as React.RefObject<HTMLDivElement>}
-      className="touch-row rounded-2xl"
+      className="touch-row rounded-2xl bg-am-bg"
       style={{
         transform: translateY ? `translateY(${translateY}px)` : undefined,
         transition: dragging ? "none" : "transform 150ms ease",
-        boxShadow: active ? "var(--nm-raised)" : undefined,
         zIndex: active ? 10 : undefined,
         position: "relative",
-        background: "var(--nm-bg)",
       }}
     >
-      <div className="flex items-center gap-3 px-2 py-2.5 rounded-2xl hover:bg-nm-text/5 text-left">
+      <div className="flex items-center gap-3 px-2 py-2.5 rounded-2xl hover:bg-am-fill transition-colors text-left">
         {firstTrack ? (
-          <CoverArt artKey={firstTrack.artKey} alt={playlist.name} className="w-11 h-11" />
+          <CoverArt artKey={firstTrack.artKey} alt={playlist.name} className="w-11 h-11" rounded="rounded-lg" />
         ) : (
-          <div className="w-11 h-11 rounded-xl nm-inset-sm flex items-center justify-center text-nm-text-muted shrink-0">
+          <div className="w-11 h-11 rounded-xl bg-am-fill flex items-center justify-center text-am-muted shrink-0">
             <ListMusic className="w-5 h-5" />
           </div>
         )}
         <div className="min-w-0">
-          <p className="truncate text-[15px]">{playlist.name}</p>
-          <p className="truncate text-[13px] text-nm-text-muted">{playlist.trackIds.length}곡</p>
+          <p className="truncate text-[15px] text-am-text font-medium">{playlist.name}</p>
+          <p className="truncate text-[13px] text-am-muted">{playlist.trackIds.length}곡</p>
         </div>
       </div>
     </div>
@@ -87,12 +85,12 @@ export function PlaylistsList() {
       <button
         type="button"
         onClick={() => setShowNew(true)}
-        className="flex items-center gap-3 px-2 py-2.5 rounded-2xl hover:bg-nm-text/5 text-left"
+        className="flex items-center gap-3 px-2 py-2.5 rounded-2xl hover:bg-am-fill transition-colors text-left"
       >
-        <div className="w-11 h-11 rounded-xl nm-flat flex items-center justify-center text-nm-accent shrink-0">
+        <div className="w-11 h-11 rounded-xl bg-am-fill flex items-center justify-center text-am-accent shrink-0">
           <Plus className="w-5 h-5" />
         </div>
-        <p className="text-[15px] text-nm-accent font-medium">새로운 재생목록</p>
+        <p className="text-[15px] text-am-accent font-medium">새로운 재생목록</p>
       </button>
 
       {orderedPlaylists.map((playlist, i) => (

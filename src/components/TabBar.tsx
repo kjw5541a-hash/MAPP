@@ -14,7 +14,7 @@ export function TabBar() {
   const setTab = useUIStore((s) => s.setTab);
 
   return (
-    <nav className="flex justify-around px-2 pt-2 nm-flat tabbar-safe-bottom">
+    <nav className="flex justify-around px-2 pt-2 am-tabbar">
       {TABS.map(({ id, label, icon: Icon }) => {
         const active = tab === id;
         return (
@@ -22,8 +22,8 @@ export function TabBar() {
             key={id}
             type="button"
             onClick={() => setTab(id)}
-            className={`flex flex-col items-center gap-0.5 px-3 py-1.5 min-w-16 rounded-2xl transition-all ${
-              active ? "nm-pressed text-nm-accent" : "text-nm-text-muted"
+            className={`flex flex-col items-center gap-0.5 px-3 py-1.5 min-w-16 transition-colors ${
+              active ? "text-am-accent" : "text-am-muted"
             }`}
           >
             <Icon

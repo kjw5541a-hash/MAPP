@@ -46,34 +46,34 @@ export function PlaylistDetail({ playlistId }: { playlistId: string }) {
   return (
     <div className="flex flex-col h-full">
       <BackHeader title={playlist.name} onBack={closeDetail} />
-      <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain nm-scrollbar-none px-4 pb-4">
+      <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain no-scrollbar px-4 pb-4">
         <div className="flex flex-col items-center text-center py-4 gap-3">
           <CoverArt
             artKey={tracks[0]?.artKey}
             alt={playlist.name}
             className="w-44 h-44"
-            rounded="rounded-2xl"
+            rounded="rounded-lg"
           />
           <div>
-            <h2 className="text-xl font-semibold flex items-center justify-center">
+            <h2 className="text-xl font-bold text-am-text flex items-center justify-center">
               <button
                 type="button"
                 onClick={() => setShowRenameModal(true)}
                 aria-label={`재생목록 이름 수정: ${playlist.name}`}
-                className="inline-flex items-center justify-center gap-1.5 max-w-full min-w-0 px-2 py-0.5 -my-0.5 rounded-xl hover:bg-nm-text/5 active:bg-nm-text/10 transition-colors group"
+                className="inline-flex items-center justify-center gap-1.5 max-w-full min-w-0 px-2 py-0.5 -my-0.5 rounded-xl hover:bg-am-fill active:bg-am-fill/80 transition-colors group"
               >
                 <span className="truncate">{playlist.name}</span>
-                <Pencil className="w-4 h-4 text-nm-text-muted shrink-0 group-hover:text-nm-accent transition-colors" />
+                <Pencil className="w-4 h-4 text-am-muted shrink-0 group-hover:text-am-accent transition-colors" />
               </button>
             </h2>
-            <p className="text-xs text-nm-text-muted mt-1">{tracks.length}곡</p>
+            <p className="text-xs text-am-muted mt-1">{tracks.length}곡</p>
           </div>
           <div className="flex gap-3 mt-2">
             <button
               type="button"
               disabled={tracks.length === 0}
               onClick={() => playQueue(tracks, 0, { type: "playlist", playlistId })}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-full nm-raised text-nm-accent font-medium disabled:opacity-40"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-am-fill text-am-accent font-semibold hover:bg-am-fill/80 transition-colors disabled:opacity-40"
             >
               <Play className="w-4 h-4 fill-current" /> 재생
             </button>
@@ -81,7 +81,7 @@ export function PlaylistDetail({ playlistId }: { playlistId: string }) {
               type="button"
               disabled={tracks.length === 0}
               onClick={() => playShuffled(tracks, { type: "playlist", playlistId })}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-full nm-raised text-nm-accent font-medium disabled:opacity-40"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-am-fill text-am-accent font-semibold hover:bg-am-fill/80 transition-colors disabled:opacity-40"
             >
               <Shuffle className="w-4 h-4" /> 셔플
             </button>
@@ -89,7 +89,7 @@ export function PlaylistDetail({ playlistId }: { playlistId: string }) {
               type="button"
               onClick={() => setShowTrackPicker(true)}
               aria-label="곡 추가"
-              className="flex items-center justify-center w-11 h-11 rounded-full nm-raised text-nm-accent"
+              className="flex items-center justify-center w-11 h-11 rounded-full bg-am-fill text-am-accent hover:bg-am-fill/80 transition-colors"
             >
               <Plus className="w-4 h-4" />
             </button>
@@ -97,7 +97,7 @@ export function PlaylistDetail({ playlistId }: { playlistId: string }) {
               type="button"
               onClick={() => setConfirmDeletePlaylist(true)}
               aria-label="재생목록 삭제"
-              className="flex items-center justify-center w-11 h-11 rounded-full nm-raised text-red-500"
+              className="flex items-center justify-center w-11 h-11 rounded-full bg-am-fill text-am-accent hover:bg-am-fill/80 transition-colors"
             >
               <Trash2 className="w-4 h-4" />
             </button>
@@ -105,7 +105,7 @@ export function PlaylistDetail({ playlistId }: { playlistId: string }) {
         </div>
 
         {tracks.length === 0 ? (
-          <p className="text-center text-sm text-nm-text-muted py-10">
+          <p className="text-center text-sm text-am-muted py-10">
             아직 이 재생목록에 곡이 없습니다.
             <br />+ 버튼으로 곡을 추가해보세요.
           </p>
