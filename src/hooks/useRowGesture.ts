@@ -2,6 +2,14 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 const LONG_PRESS_MS = 450;
 const MOVE_CANCEL_PX = 10;
+// iOS Safari synthesizes a full compatibility mouse sequence (mousemove →
+// mousedown → mouseup → click) after every touch tap, unless the touch was
+// preventDefaulted — and these listeners are passive, so it never is. A
+// synthetic mouseup after a touch would fire onTap a second time: harmless
+// for play (same queue twice) but fatal for a selection toggle, which flips
+// back off and looks like the tap did nothing. Ignore mouse input briefly
+// after any touch ends; real desktop clicks never follow a touch.
+const MOUSE_AFTER_TOUCH_IGNORE_MS = 700;
 export const SWIPE_REVEAL_PX = 76;
 const SWIPE_OPEN_THRESHOLD = 40;
 const SWIPE_OVERSHOOT_PX = 24;
@@ -44,6 +52,7 @@ export function useRowGesture(options: RowGestureOptions) {
   const dragBaseY = useRef(0);
   const phase = useRef<"idle" | "wait" | "swipe" | "drag">("idle");
   const timer = useRef<number | null>(null);
+  const lastTouchEndAt = useRef(0);
 
   useEffect(() => {
     const el = ref.current;
@@ -67,19 +76,26 @@ export function useRowGesture(options: RowGestureOptions) {
       baseOffset.current = open ? -SWIPE_REVEAL_PX : 0;
       phase.current = "wait";
       clearTimer();
-      timer.current = window.setTimeout(() => {
-        if (phase.current !== "wait") return;
-        if (optionsRef.current.onDragMove) {
-          phase.current = "drag";
-          dragBaseY.current = startPos.current?.y ?? 0;
-          setDragging(true);
-          optionsRef.current.onDragStart?.();
-        } else {
-          phase.current = "idle";
-        }
-        optionsRef.current.onLongPress?.();
-        navigator.vibrate?.(10);
-      }, LONG_PRESS_MS);
+      // Only wait for a long-press when the caller actually has long-press
+      // behavior. With no onLongPress and no onDragMove the timer would do
+      // nothing but flip the phase to "idle" at 450ms and swallow the tap —
+      // exactly the careful, slightly-long press on a small target (like the
+      // selection radio) that must still toggle.
+      if (optionsRef.current.onLongPress || optionsRef.current.onDragMove) {
+        timer.current = window.setTimeout(() => {
+          if (phase.current !== "wait") return;
+          if (optionsRef.current.onDragMove) {
+            phase.current = "drag";
+            dragBaseY.current = startPos.current?.y ?? 0;
+            setDragging(true);
+            optionsRef.current.onDragStart?.();
+          } else {
+            phase.current = "idle";
+          }
+          optionsRef.current.onLongPress?.();
+          navigator.vibrate?.(10);
+        }, LONG_PRESS_MS);
+      }
     };
 
     const onMove = (e: TouchEvent) => {
@@ -112,6 +128,7 @@ export function useRowGesture(options: RowGestureOptions) {
     };
 
     const onEnd = () => {
+      lastTouchEndAt.current = Date.now();
       clearTimer();
       if (phase.current === "swipe") {
         const shouldOpen = offsetXRef.current < -SWIPE_OPEN_THRESHOLD;
@@ -132,6 +149,7 @@ export function useRowGesture(options: RowGestureOptions) {
 
     const onMouseDown = (e: MouseEvent) => {
       if (e.button !== 0 || phase.current !== "idle") return;
+      if (Date.now() - lastTouchEndAt.current < MOUSE_AFTER_TOUCH_IGNORE_MS) return;
       if ((e.target as HTMLElement | null)?.closest("[data-swipe-ignore]")) return;
       mouseStart = { x: e.clientX, y: e.clientY };
     };
@@ -147,6 +165,10 @@ export function useRowGesture(options: RowGestureOptions) {
 
     const onMouseUp = (e: MouseEvent) => {
       if (!mouseStart) return;
+      if (Date.now() - lastTouchEndAt.current < MOUSE_AFTER_TOUCH_IGNORE_MS) {
+        mouseStart = null;
+        return;
+      }
       const start = mouseStart;
       mouseStart = null;
       if (e.button !== 0 || phase.current !== "idle") return;

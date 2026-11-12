@@ -75,7 +75,11 @@ export function SongRow({
   return (
     <SwipeRow
       onTap={selectMode ? onToggleSelect : onPlay}
-      onLongPress={onLongPress}
+      // In select mode there is no long-press behavior (the guard in SongsList
+      // already no-ops it), so pass none: useRowGesture only arms its 450ms
+      // timer when a long-press exists, and an armed timer would swallow a
+      // careful, slightly-long press on the radio instead of toggling it.
+      onLongPress={selectMode ? undefined : onLongPress}
       onDeleteRequest={onDeleteRequest}
       swipeEnabled={!selectMode}
       deleteLabel="라이브러리에서 삭제"
