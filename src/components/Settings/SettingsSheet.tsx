@@ -180,7 +180,7 @@ export function SettingsSheet({ onClose }: { onClose: () => void }) {
           <div className="flex gap-2 mt-3">
             <button
               type="button"
-              onClick={() => exportLibraryBackup(tracks, playlists)}
+              onClick={() => void exportLibraryBackup(tracks, playlists)}
               className="flex-1 py-2.5 rounded-xl bg-white border border-am-separator text-[13px] text-am-accent font-medium hover:bg-white/80 transition-colors"
             >
               백업 내보내기
