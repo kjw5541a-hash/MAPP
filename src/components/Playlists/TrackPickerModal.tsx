@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { ChevronDown, Search, Check } from "lucide-react";
+import { useVisualViewportRect } from "../../hooks/useViewport";
 import { useLibraryStore } from "../../store/libraryStore";
 import { searchTracks } from "../../lib/derive";
 import { CoverArt } from "../CoverArt";
@@ -20,6 +21,9 @@ export function TrackPickerModal({ playlistId, existingTrackIds, onClose }: Trac
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  // See NewPlaylistModal: size from the visual viewport so the sheet (and
+  // its scrollable list) shrinks to the area above the virtual keyboard.
+  const vv = useVisualViewportRect();
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedQuery(query), 200);
@@ -46,7 +50,10 @@ export function TrackPickerModal({ playlistId, existingTrackIds, onClose }: Trac
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex flex-col bg-am-bg">
+    <div
+      className="fixed z-[60] flex flex-col bg-am-bg"
+      style={{ top: vv.top, left: vv.left, width: vv.width, height: vv.height }}
+    >
       <div className="flex items-center gap-3 px-4 pb-2 shrink-0 safe-top">
         <button
           type="button"

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useVisualViewportRect } from "../../hooks/useViewport";
 
 interface RenamePlaylistModalProps {
   initialName: string;
@@ -12,6 +13,9 @@ export function RenamePlaylistModal({
   onRename,
 }: RenamePlaylistModalProps) {
   const [name, setName] = useState(initialName);
+  // See NewPlaylistModal: position from the visual viewport so the sheet
+  // sits just above the virtual keyboard instead of behind it.
+  const vv = useVisualViewportRect();
 
   const submit = () => {
     const trimmed = name.trim();
@@ -21,7 +25,10 @@ export function RenamePlaylistModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/30 p-4">
+    <div
+      className="fixed z-50 flex items-end sm:items-center justify-center bg-black/30 p-4"
+      style={{ top: vv.top, left: vv.left, width: vv.width, height: vv.height }}
+    >
       <div className="w-full max-w-sm bg-white border border-am-separator rounded-2xl p-5">
         <h2 className="text-lg font-semibold text-am-text mb-4">재생목록 이름 변경</h2>
         <input

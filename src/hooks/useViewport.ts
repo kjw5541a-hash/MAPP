@@ -44,12 +44,6 @@ export function useViewport() {
       }
     };
 
-    const handleScroll = () => {
-      if (window.scrollY !== 0) {
-        window.scrollTo(0, 0);
-      }
-    };
-
     lastWidthRef.current = vv.width;
     baselineHeightRef.current = Math.max(window.innerHeight, vv.height);
     apply();
@@ -57,15 +51,81 @@ export function useViewport() {
     vv.addEventListener("resize", apply);
     window.addEventListener("resize", apply);
     window.addEventListener("orientationchange", apply);
-    window.addEventListener("scroll", handleScroll);
 
     return () => {
       vv.removeEventListener("resize", apply);
       window.removeEventListener("resize", apply);
       window.removeEventListener("orientationchange", apply);
-      window.removeEventListener("scroll", handleScroll);
     };
   }, []);
 
   return { keyboardOpen };
+}
+
+export interface VisualViewportRect {
+  top: number;
+  left: number;
+  width: number;
+  height: number;
+}
+
+function getVisualViewportRect(): VisualViewportRect {
+  if (typeof window === "undefined") {
+    return { top: 0, left: 0, width: 0, height: 0 };
+  }
+  const vv = window.visualViewport;
+  if (vv) {
+    return {
+      top: vv.offsetTop,
+      left: vv.offsetLeft,
+      width: vv.width,
+      height: vv.height,
+    };
+  }
+  return {
+    top: 0,
+    left: 0,
+    width: window.innerWidth,
+    height: window.innerHeight,
+  };
+}
+
+export function useVisualViewportRect(): VisualViewportRect {
+  const [rect, setRect] = useState<VisualViewportRect>(getVisualViewportRect);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const update = () => {
+      const next = getVisualViewportRect();
+      setRect((prev) => {
+        if (
+          prev.top === next.top &&
+          prev.left === next.left &&
+          prev.width === next.width &&
+          prev.height === next.height
+        ) {
+          return prev;
+        }
+        return next;
+      });
+    };
+
+    update();
+
+    const vv = window.visualViewport;
+    vv?.addEventListener("resize", update);
+    vv?.addEventListener("scroll", update);
+    window.addEventListener("resize", update);
+    window.addEventListener("orientationchange", update);
+
+    return () => {
+      vv?.removeEventListener("resize", update);
+      vv?.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
+      window.removeEventListener("orientationchange", update);
+    };
+  }, []);
+
+  return rect;
 }

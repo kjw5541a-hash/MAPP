@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { ChevronDown } from "lucide-react";
+import { useVisualViewportRect } from "../../hooks/useViewport";
 import { useSettingsStore } from "../../store/settingsStore";
 import { useLibraryStore } from "../../store/libraryStore";
 import { usePlayerStore } from "../../store/playerStore";
@@ -26,13 +27,20 @@ export function SettingsSheet({ onClose }: { onClose: () => void }) {
   const [storageInfo, setStorageInfo] = useState<StorageInfo | null>(null);
   const [restoreStatus, setRestoreStatus] = useState<{ message: string; isError?: boolean } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // See NewPlaylistModal: size from the visual viewport so the sheet
+  // shrinks to the area above the virtual keyboard instead of extending
+  // behind it (the Gemini API key input stays reachable).
+  const vv = useVisualViewportRect();
 
   useEffect(() => {
     void getStorageInfo().then(setStorageInfo);
   }, []);
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-am-bg">
+    <div
+      className="fixed z-50 flex flex-col bg-am-bg"
+      style={{ top: vv.top, left: vv.left, width: vv.width, height: vv.height }}
+    >
       <div className="flex items-center gap-3 px-4 pb-2 shrink-0 safe-top">
         <button
           type="button"
