@@ -52,6 +52,14 @@ export function useAudioElement() {
   // Timestamp of the last src swap, to filter out the stale pause event the
   // browser fires for the old resource when a new track starts.
   const lastSrcChangeRef = useRef(0);
+  // Id of the track whose source is actually loaded in the element.
+  // The sync effect must not call play() before the async IndexedDB load
+  // finishes: until then audio.src still holds the previous track (or
+  // nothing on first play), and a play() there rejects and would wrongly
+  // be reported as a playback failure. The load effect starts playback
+  // once the src is ready, so this ref is the only gate the sync effect
+  // needs.
+  const loadedTrackIdRef = useRef<string | null>(null);
 
   const revokeUrls = () => {
     if (objectUrlRef.current) {
@@ -113,6 +121,7 @@ export function useAudioElement() {
     if (!currentTrack) {
       audio.pause();
       audio.removeAttribute("src");
+      loadedTrackIdRef.current = null;
       if ("mediaSession" in navigator) navigator.mediaSession.metadata = null;
       revokeUrls();
       return;
@@ -145,6 +154,15 @@ export function useAudioElement() {
         if (matchingPrefetch?.objectUrl) {
           URL.revokeObjectURL(matchingPrefetch.objectUrl);
         }
+        // A genuinely missing file (not a superseded load) is a real
+        // failure: stop and tell the user, instead of leaving the player
+        // stuck on "playing" with nothing loaded.
+        if (!cancelled) {
+          loadedTrackIdRef.current = null;
+          const { setPlaying, setPlaybackError } = usePlayerStore.getState();
+          setPlaying(false);
+          setPlaybackError("재생할 수 없습니다. 다시 눌러주세요.");
+        }
         return;
       }
 
@@ -155,6 +173,7 @@ export function useAudioElement() {
       objectUrlRef.current = url;
       audio.src = url;
       lastSrcChangeRef.current = Date.now();
+      loadedTrackIdRef.current = currentTrack.id;
       const initialProgress = usePlayerStore.getState().progress;
       audio.currentTime = initialProgress > 0 ? initialProgress : 0;
 
@@ -194,11 +213,19 @@ export function useAudioElement() {
   useEffect(() => {
     const audio = audioRef.current!;
     if (isPlaying) {
-      audio.play().catch(() => {
-        const { setPlaying, setPlaybackError } = usePlayerStore.getState();
-        setPlaying(false);
-        setPlaybackError("재생할 수 없습니다. 다시 눌러주세요.");
-      });
+      // Play only when the current track's source is actually loaded.
+      // Before the async load finishes, audio.src still holds the previous
+      // track (or nothing on first play): a play() there rejects, and that
+      // rejection is not a real failure — the load effect starts playback
+      // once the src is ready. Skipping here is what fixes the first-play
+      // "재생할 수 없습니다" error.
+      if (currentTrack?.id && loadedTrackIdRef.current === currentTrack.id) {
+        audio.play().catch(() => {
+          const { setPlaying, setPlaybackError } = usePlayerStore.getState();
+          setPlaying(false);
+          setPlaybackError("재생할 수 없습니다. 다시 눌러주세요.");
+        });
+      }
     } else {
       audio.pause();
     }
@@ -212,7 +239,16 @@ export function useAudioElement() {
     if (seekRequest === null) return;
     const audio = audioRef.current!;
     audio.currentTime = seekRequest;
-    if (usePlayerStore.getState().isPlaying) {
+    // Same gate as the sync effect: a seek issued while a new track's
+    // source is still loading must not play() on the stale/empty src.
+    // The seek position itself is already in the store's progress, which
+    // the load effect applies once the src is ready.
+    const current = usePlayerStore.getState().currentTrack();
+    if (
+      usePlayerStore.getState().isPlaying &&
+      current &&
+      loadedTrackIdRef.current === current.id
+    ) {
       audio.play().catch(() => {
         const { setPlaying, setPlaybackError } = usePlayerStore.getState();
         setPlaying(false);
