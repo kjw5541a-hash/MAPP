@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Music2 } from "lucide-react";
-import { getArtUrl } from "../lib/artCache";
+import { getArtUrl, releaseArtUrl } from "../lib/artCache";
 
 interface CoverArtProps {
   artKey?: string;
@@ -9,7 +9,7 @@ interface CoverArtProps {
   rounded?: string;
 }
 
-export function CoverArt({ artKey, alt, className = "", rounded = "rounded-xl" }: CoverArtProps) {
+export function CoverArt({ artKey, alt, className = "", rounded = "rounded-lg" }: CoverArtProps) {
   const [url, setUrl] = useState<string | undefined>(undefined);
 
   useEffect(() => {
@@ -20,13 +20,14 @@ export function CoverArt({ artKey, alt, className = "", rounded = "rounded-xl" }
     });
     return () => {
       cancelled = true;
+      releaseArtUrl(artKey);
     };
   }, [artKey]);
 
   if (!url) {
     return (
       <div
-        className={`${className} ${rounded} nm-inset-sm flex items-center justify-center text-nm-text-muted shrink-0`}
+        className={`${className} ${rounded} bg-am-fill flex items-center justify-center text-am-muted shrink-0`}
       >
         <Music2 className="w-1/3 h-1/3 opacity-50" />
       </div>

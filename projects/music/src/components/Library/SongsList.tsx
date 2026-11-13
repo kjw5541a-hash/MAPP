@@ -15,8 +15,23 @@ const ROW_GAP = 4; // px — matches the previous list's gap-1
 const ROW_ESTIMATE = 64; // fallback row step (content + gap) before the first row is measured
 const OVERSCAN = 8; // extra rows kept mounted above/below the viewport
 
-const SORT_CYCLE: SongSort[] = ["title", "artist"];
-const SORT_LABEL: Record<SongSort, string> = { title: "제목순", artist: "아티스트순" };
+const SORT_CYCLE: SongSort[] = ["title", "artist", "album"];
+const SORT_LABEL: Record<SongSort, string> = {
+  title: "제목순",
+  artist: "가수순",
+  album: "앨범순",
+};
+const STORAGE_KEY = "mapp-songs-sort";
+
+function isSongSort(value: string | null): value is SongSort {
+  return SORT_CYCLE.some((s) => s === value);
+}
+
+function initialSort(): SongSort {
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (isSongSort(saved)) return saved;
+  return "title";
+}
 
 export function SongsList() {
   const tracks = useLibraryStore((s) => s.tracks);
@@ -33,15 +48,21 @@ export function SongsList() {
   const clearSelection = useSongSelectionStore((s) => s.clear);
 
   const [query, setQuery] = useState("");
-  const [sort, setSort] = useState<SongSort>("title");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [sort, setSort] = useState<SongSort>(initialSort);
   const [pendingDelete, setPendingDelete] = useState<Track | null>(null);
   const [showPlaylistPicker, setShowPlaylistPicker] = useState(false);
   const [showNewPlaylist, setShowNewPlaylist] = useState(false);
   const [newPlaylistTarget, setNewPlaylistTarget] = useState<string | null>(null);
 
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedQuery(query), 200);
+    return () => clearTimeout(timer);
+  }, [query]);
+
   const filtered = useMemo(
-    () => sortTracks(query.trim() ? searchTracks(tracks, query) : tracks, sort),
-    [tracks, query, sort],
+    () => sortTracks(debouncedQuery.trim() ? searchTracks(tracks, debouncedQuery) : tracks, sort),
+    [tracks, debouncedQuery, sort],
   );
 
   // Cancelling selection (e.g. the shared header's "취소" button) clears the
@@ -92,20 +113,20 @@ export function SongsList() {
   return (
     <div className="flex flex-col h-full">
       <div className="px-4 pb-2 shrink-0 flex items-center gap-2">
-        <div className="flex-1 flex items-center gap-2 nm-inset-sm rounded-xl px-3 py-2.5">
-          <Search className="w-4 h-4 text-nm-text-muted shrink-0" />
+        <div className="flex-1 flex items-center gap-2 am-search px-3 py-2.5">
+          <Search className="w-4 h-4 text-am-muted shrink-0" />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="제목, 아티스트, 앨범 검색"
-            className="flex-1 bg-transparent outline-none placeholder:text-nm-text-muted text-[15px] min-w-0"
+            className="flex-1 bg-transparent outline-none placeholder:text-am-muted text-[15px] min-w-0 text-am-text"
           />
           {query && (
             <button
               type="button"
               aria-label="검색어 지우기"
               onClick={() => setQuery("")}
-              className="shrink-0 w-4 h-4 rounded-full flex items-center justify-center text-nm-text-muted"
+              className="shrink-0 w-4 h-4 rounded-full flex items-center justify-center text-am-muted"
             >
               <X className="w-4 h-4" />
             </button>
@@ -114,8 +135,12 @@ export function SongsList() {
         <button
           type="button"
           aria-label={`정렬: ${SORT_LABEL[sort]}`}
-          onClick={() => setSort(SORT_CYCLE[(SORT_CYCLE.indexOf(sort) + 1) % SORT_CYCLE.length])}
-          className="h-10 px-3 rounded-full nm-flat flex items-center gap-1 shrink-0 text-nm-accent text-xs whitespace-nowrap"
+          onClick={() => {
+            const next = SORT_CYCLE[(SORT_CYCLE.indexOf(sort) + 1) % SORT_CYCLE.length];
+            setSort(next);
+            localStorage.setItem(STORAGE_KEY, next);
+          }}
+          className="h-10 px-3 am-chip flex items-center gap-1 shrink-0 text-am-accent text-xs whitespace-nowrap"
         >
           <ArrowUpDown className="w-4 h-4" />
           {SORT_LABEL[sort]}
@@ -134,7 +159,7 @@ export function SongsList() {
               setShowNewPlaylist(true);
             }
           }}
-          className="w-10 h-10 rounded-full nm-flat flex items-center justify-center shrink-0 text-nm-accent disabled:text-nm-text-muted disabled:opacity-40"
+          className="w-10 h-10 am-icon-btn flex items-center justify-center shrink-0 text-am-accent disabled:text-am-muted disabled:opacity-40"
         >
           <ListPlus className="w-5 h-5" />
         </button>
@@ -143,10 +168,10 @@ export function SongsList() {
       <div
         ref={scrollRef}
         onScroll={handleScroll}
-        className="flex-1 min-h-0 overflow-y-auto overscroll-contain nm-scrollbar-none px-4 pb-4"
+        className="flex-1 min-h-0 overflow-y-auto overscroll-contain no-scrollbar px-4 pb-4"
       >
         {total === 0 ? (
-          <p className="text-center text-sm text-nm-text-muted py-10">검색 결과가 없습니다.</p>
+          <p className="text-center text-sm text-am-muted py-10">검색 결과가 없습니다.</p>
         ) : (
           <div style={{ position: "relative", height: total * rowStep - ROW_GAP }}>
             {visible.map((track, i) => {

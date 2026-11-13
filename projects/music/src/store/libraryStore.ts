@@ -1,7 +1,10 @@
 import { create } from "zustand";
-import type { Track, Playlist } from "../types";
+import type { Track, Playlist, LibraryBackup, RestoreResult } from "../types";
 import * as db from "../lib/db";
-import { parseM4aFile, hashFile } from "../lib/metadata";
+import { parseM4aFile, hashBuffer } from "../lib/metadata";
+import { clearArtCache } from "../lib/artCache";
+import { usePlayerStore } from "./playerStore";
+import { requestStoragePersistence, isQuotaExceededError } from "../lib/storage";
 
 interface ImportProgress {
   active: boolean;
@@ -13,6 +16,8 @@ export interface ImportResult {
   added: number;
   skipped: number;
   failed: number;
+  failedReason?: string;
+  quotaExceeded?: boolean;
 }
 
 interface LibraryState {
@@ -36,6 +41,19 @@ interface LibraryState {
   removeFromPlaylist: (playlistId: string, trackId: string) => Promise<void>;
   reorderPlaylist: (playlistId: string, trackIds: string[]) => Promise<void>;
   reorderPlaylists: (playlistIds: string[]) => Promise<void>;
+  restoreBackup: (backup: LibraryBackup) => Promise<RestoreResult>;
+}
+
+const FILE_IMPORT_TIMEOUT_MS = 60_000;
+
+type ImportStep = "읽기" | "메타데이터 분석" | "저장";
+
+function formatFileSize(bytes: number): string {
+  if (!Number.isFinite(bytes) || bytes <= 0) return "0.0KB";
+  if (bytes < 1024 * 1024) {
+    return `${(bytes / 1024).toFixed(1)}KB`;
+  }
+  return `${(bytes / (1024 * 1024)).toFixed(1)}MB`;
 }
 
 export const useLibraryStore = create<LibraryState>((set, get) => ({
@@ -46,12 +64,14 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
   importResult: null,
 
   init: async () => {
+    void requestStoragePersistence();
     const [tracks, playlists] = await Promise.all([db.getAllTracks(), db.getAllPlaylists()]);
     tracks.sort((a, b) => a.title.localeCompare(b.title));
     // Playlists saved before manual ordering existed have no `order` — fall
     // back to creation time so they still come out in a stable sequence.
     playlists.sort((a, b) => (a.order ?? a.dateCreated) - (b.order ?? b.dateCreated));
     set({ tracks, playlists, ready: true });
+    usePlayerStore.getState().restorePlayback(tracks);
   },
 
   importFiles: async (files) => {
@@ -59,38 +79,112 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
     // Seeded from the library so re-picking a whole folder only brings in what
     // is new, and grows as we go so one selection cannot add the same file twice.
     const seen = new Set(get().tracks.map((t) => t.hash).filter(Boolean) as string[]);
+    const newTracks: Track[] = [];
     let added = 0;
     let skipped = 0;
     let failed = 0;
+    let failedReason: string | undefined;
+    let quotaExceeded = false;
 
     set({ importProgress: { active: true, done: 0, total: list.length }, importResult: null });
 
     for (const file of list) {
+      let timeoutId: ReturnType<typeof setTimeout> | undefined;
+      let timedOut = false;
+      let step: ImportStep = "읽기";
       try {
-        const hash = await hashFile(file);
-        if (seen.has(hash)) {
-          skipped++;
-        } else {
-          seen.add(hash);
-          const { track, fileBlob, artBlob } = await parseM4aFile(file, hash);
-          await db.addTrack(track, fileBlob, artBlob);
-          added++;
-          set((state) => ({
-            tracks: [...state.tracks, track].sort((a, b) => a.title.localeCompare(b.title)),
-          }));
-        }
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          timeoutId = setTimeout(() => {
+            timedOut = true;
+            const message =
+              step === "읽기"
+                ? `파일 읽기 시간 초과 · ${formatFileSize(file.size)}`
+                : step === "메타데이터 분석"
+                ? "메타데이터 분석 시간 초과"
+                : "저장 시간 초과";
+            reject(new Error(message));
+          }, FILE_IMPORT_TIMEOUT_MS);
+        });
+
+        const processPromise = (async () => {
+          // On iOS Safari, un-downloaded iCloud/cloud-provider files hang at the OS
+          // file coordination layer. FileReader and file.stream() share the same WebCore
+          // FileReaderLoader under the hood and also hang rather than failing fast, so
+          // we retain the proven arrayBuffer() read path and let the 60s timeout bound it.
+          const buffer = await file.arrayBuffer();
+          if (timedOut) return;
+          const hash = await hashBuffer(buffer);
+          if (timedOut) return;
+          if (seen.has(hash)) {
+            skipped++;
+          } else {
+            seen.add(hash);
+            try {
+              step = "메타데이터 분석";
+              const fileBlob = new Blob([buffer], { type: file.type });
+              const { track, artBlob } = await parseM4aFile(fileBlob, file.name, hash);
+              if (timedOut) {
+                // Never added to the library: drop the hash so a later
+                // re-import retries this file instead of skipping it as a duplicate.
+                seen.delete(hash);
+                return;
+              }
+              step = "저장";
+              await db.addTrack(track, fileBlob, artBlob);
+              if (timedOut) {
+                seen.delete(hash);
+                return;
+              }
+              added++;
+              newTracks.push(track);
+            } catch (err) {
+              seen.delete(hash);
+              throw err;
+            }
+          }
+        })();
+        processPromise.catch(() => {});
+
+        await Promise.race([processPromise, timeoutPromise]);
       } catch (err) {
         console.error("Failed to import", file.name, err);
         failed++;
+        if (isQuotaExceededError(err)) {
+          quotaExceeded = true;
+          failedReason = "저장 공간 부족";
+          break;
+        }
+        if (!failedReason) {
+          if (timedOut) {
+            failedReason = err instanceof Error && err.message ? err.message : "시간 초과";
+          } else {
+            const message = err instanceof Error && err.message ? err.message : "가져오기 실패";
+            failedReason = `${step}: ${message}`;
+          }
+        }
+      } finally {
+        clearTimeout(timeoutId);
       }
       set((state) => ({
         importProgress: { ...state.importProgress, done: state.importProgress.done + 1 },
       }));
     }
 
+    if (newTracks.length > 0) {
+      set((state) => ({
+        tracks: [...state.tracks, ...newTracks].sort((a, b) => a.title.localeCompare(b.title)),
+      }));
+    }
+
     set({
       importProgress: { active: false, done: 0, total: 0 },
-      importResult: { added, skipped, failed },
+      importResult: {
+        added,
+        skipped,
+        failed,
+        failedReason,
+        quotaExceeded,
+      },
     });
   },
 
@@ -106,10 +200,12 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
     }));
     await Promise.all(playlists.map((p) => db.savePlaylist(p)));
     set((state) => ({ tracks: state.tracks.filter((t) => t.id !== id), playlists }));
+    usePlayerStore.getState().removeTrackFromQueue(id);
   },
 
   clearLibrary: async () => {
     await db.clearAll();
+    clearArtCache();
     set({ tracks: [], playlists: [], importResult: null });
   },
 
@@ -212,5 +308,79 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
       .filter((p): p is Playlist => p !== null);
     await Promise.all(updated.map((p) => db.savePlaylist(p)));
     set({ playlists: updated });
+  },
+
+  restoreBackup: async (backup) => {
+    const currentTracks = get().tracks;
+    const byHash = new Map<string, Track>();
+    const byId = new Map<string, Track>();
+    for (const track of currentTracks) {
+      if (track.hash) {
+        byHash.set(track.hash, track);
+      }
+      byId.set(track.id, track);
+    }
+
+    const backupIdToCurrentId = new Map<string, string>();
+    const restoredLikeTrackIds = new Set<string>();
+    const updatedTracksMap = new Map<string, Track>(currentTracks.map((t) => [t.id, t]));
+    const tracksToUpdate: Track[] = [];
+
+    for (const bt of backup.tracks ?? []) {
+      const matched = (bt.hash ? byHash.get(bt.hash) : undefined) ?? byId.get(bt.id);
+      if (!matched) continue;
+      backupIdToCurrentId.set(bt.id, matched.id);
+
+      if (bt.liked && !restoredLikeTrackIds.has(matched.id)) {
+        restoredLikeTrackIds.add(matched.id);
+        const current = updatedTracksMap.get(matched.id) ?? matched;
+        const updated: Track = {
+          ...current,
+          liked: true,
+          likeOrder: bt.likeOrder ?? current.likeOrder ?? Date.now(),
+        };
+        updatedTracksMap.set(matched.id, updated);
+        tracksToUpdate.push(updated);
+      }
+    }
+
+    await Promise.all(tracksToUpdate.map((t) => db.updateTrackMeta(t)));
+
+    const savedPlaylists: Playlist[] = [];
+    for (const bp of backup.playlists ?? []) {
+      if (!Array.isArray(bp.trackIds)) continue;
+      const validTrackIds = bp.trackIds
+        .map((tid) => backupIdToCurrentId.get(tid) ?? (byId.has(tid) ? tid : undefined))
+        .filter((id): id is string => Boolean(id));
+
+      if (validTrackIds.length === 0) continue;
+
+      const restoredPlaylist: Playlist = {
+        id: bp.id || crypto.randomUUID(),
+        name: bp.name,
+        trackIds: validTrackIds,
+        dateCreated: bp.dateCreated ?? Date.now(),
+        order: bp.order ?? Date.now(),
+      };
+      savedPlaylists.push(restoredPlaylist);
+    }
+
+    await Promise.all(savedPlaylists.map((p) => db.savePlaylist(p)));
+
+    const playlistMap = new Map(get().playlists.map((p) => [p.id, p]));
+    for (const p of savedPlaylists) {
+      playlistMap.set(p.id, p);
+    }
+    const newPlaylists = Array.from(playlistMap.values()).sort(
+      (a, b) => (a.order ?? a.dateCreated) - (b.order ?? b.dateCreated)
+    );
+
+    const newTracks = currentTracks.map((t) => updatedTracksMap.get(t.id) ?? t);
+    set({ tracks: newTracks, playlists: newPlaylists });
+
+    return {
+      restoredLikes: restoredLikeTrackIds.size,
+      restoredPlaylists: savedPlaylists.length,
+    };
   },
 }));

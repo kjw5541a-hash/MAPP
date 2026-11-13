@@ -49,7 +49,7 @@ export function RecommendView() {
   if (tracks.length === 0) {
     return (
       <Centered>
-        <p className="text-nm-text-muted text-sm">
+        <p className="text-am-muted text-sm">
           라이브러리에 곡이 있어야 추천을 받을 수 있습니다.
         </p>
       </Centered>
@@ -59,10 +59,10 @@ export function RecommendView() {
   if (!apiKey) {
     return (
       <Centered>
-        <div className="w-16 h-16 rounded-3xl nm-raised flex items-center justify-center text-nm-text-muted">
+        <div className="w-16 h-16 rounded-2xl bg-am-fill flex items-center justify-center text-am-muted">
           <Sparkles className="w-7 h-7" />
         </div>
-        <p className="text-nm-text-muted text-sm">
+        <p className="text-am-muted text-sm">
           설정에서 Gemini API 키를 먼저 입력해주세요.
           <br />
           키는 이 기기에만 저장됩니다.
@@ -74,21 +74,21 @@ export function RecommendView() {
   if (!base) {
     return (
       <div className="flex flex-col h-full">
-        <p className="text-center text-sm text-nm-text-muted px-8 py-6 shrink-0">
+        <p className="text-center text-sm text-am-muted px-8 py-6 shrink-0">
           기준이 될 곡을 재생하거나 아래에서 골라주세요.
         </p>
-        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain nm-scrollbar-none px-4 pb-4 flex flex-col gap-1">
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain no-scrollbar px-4 pb-4 flex flex-col gap-1">
           {tracks.map((t) => (
             <button
               key={t.id}
               type="button"
               onClick={() => setPicked(t)}
-              className="flex items-center gap-3 px-3 py-2 rounded-2xl hover:bg-nm-text/5 text-left"
+              className="flex items-center gap-3 px-3 py-2 rounded-2xl hover:bg-am-fill transition-colors text-left"
             >
-              <CoverArt artKey={t.artKey} alt={t.title} className="w-11 h-11" />
+              <CoverArt artKey={t.artKey} alt={t.title} className="w-11 h-11" rounded="rounded-lg" />
               <div className="min-w-0">
-                <p className="truncate text-[15px]">{t.title}</p>
-                <p className="truncate text-[13px] text-nm-text-muted">{t.artist}</p>
+                <p className="truncate text-[15px] text-am-text font-medium">{t.title}</p>
+                <p className="truncate text-[13px] text-am-muted">{t.artist}</p>
               </div>
             </button>
           ))}
@@ -98,26 +98,26 @@ export function RecommendView() {
   }
 
   return (
-    <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain nm-scrollbar-none px-4 pb-6">
-      <div className="flex items-center gap-3 nm-flat rounded-2xl px-3 py-2.5">
-        <CoverArt artKey={base.artKey} alt={base.title} className="w-12 h-12" />
+    <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain no-scrollbar px-4 pb-6">
+      <div className="flex items-center gap-3 bg-am-fill rounded-2xl px-3 py-2.5">
+        <CoverArt artKey={base.artKey} alt={base.title} className="w-12 h-12" rounded="rounded-lg" />
         <div className="min-w-0 flex-1">
-          <p className="text-[11px] text-nm-text-muted">기준 곡</p>
-          <p className="truncate text-[15px]">{base.title}</p>
-          <p className="truncate text-[13px] text-nm-text-muted">{base.artist}</p>
+          <p className="text-[11px] text-am-muted">기준 곡</p>
+          <p className="truncate text-[15px] font-medium text-am-text">{base.title}</p>
+          <p className="truncate text-[13px] text-am-muted">{base.artist}</p>
         </div>
         {!playing && (
           <button
             type="button"
             onClick={() => setPicked(null)}
-            className="text-[12px] text-nm-accent shrink-0"
+            className="text-[12px] text-am-accent shrink-0 font-medium"
           >
             변경
           </button>
         )}
       </div>
 
-      <h2 className="text-[13px] text-nm-text-muted px-1 pt-6 pb-2">무엇을 기준으로 찾을까요?</h2>
+      <h2 className="text-[13px] text-am-muted px-1 pt-6 pb-2">무엇을 기준으로 찾을까요?</h2>
       <div className="flex flex-wrap gap-2">
         {CRITERIA.map((c) => {
           const on = criteria.includes(c.id);
@@ -127,8 +127,8 @@ export function RecommendView() {
               type="button"
               title={c.hint}
               onClick={() => toggle(c.id)}
-              className={`px-3.5 py-2 rounded-full text-[13px] transition-all ${
-                on ? "nm-pressed text-nm-accent" : "nm-flat text-nm-text-muted"
+              className={`px-3.5 py-2 text-[13px] transition-all ${
+                on ? "am-accent-btn font-medium" : "am-chip text-am-muted"
               }`}
             >
               {c.label}
@@ -137,7 +137,7 @@ export function RecommendView() {
         })}
       </div>
       {criteria.includes("key") && (
-        <p className="text-[12px] text-nm-text-muted mt-2 px-1">
+        <p className="text-[12px] text-am-muted mt-2 px-1">
           코드·조성은 음원에서 읽어낸 값이 아니라 AI 추정이라 틀릴 수 있습니다.
         </p>
       )}
@@ -146,21 +146,21 @@ export function RecommendView() {
         type="button"
         disabled={loading || criteria.length === 0}
         onClick={run}
-        className="w-full mt-5 py-3 rounded-full nm-accent-btn font-medium disabled:opacity-40"
+        className="w-full mt-5 py-3 rounded-full am-accent-btn font-medium disabled:opacity-40"
       >
         {loading ? "찾는 중…" : "비슷한 곡 추천받기"}
       </button>
 
       {error && (
-        <div className="nm-inset-sm rounded-2xl px-4 py-3 mt-4">
-          <p className="text-[13px] text-red-500 whitespace-pre-line leading-relaxed break-words">
+        <div className="bg-am-fill rounded-2xl px-4 py-3 mt-4">
+          <p className="text-[13px] text-am-accent whitespace-pre-line leading-relaxed break-words">
             {error}
           </p>
         </div>
       )}
 
       {results && results.length === 0 && (
-        <p className="text-[13px] text-nm-text-muted text-center mt-6">추천 결과가 없습니다.</p>
+        <p className="text-[13px] text-am-muted text-center mt-6">추천 결과가 없습니다.</p>
       )}
 
       {results && results.length > 0 && (
@@ -171,27 +171,27 @@ export function RecommendView() {
               href={youtubeSearchUrl(r)}
               target="_blank"
               rel="noreferrer"
-              className="flex items-start gap-3 nm-flat rounded-2xl px-4 py-3"
+              className="flex items-start gap-3 bg-am-fill rounded-2xl px-4 py-3 hover:bg-am-fill/80 transition-colors"
             >
-              <div className="w-9 h-9 rounded-xl nm-inset-sm flex items-center justify-center text-nm-text-muted shrink-0">
+              <div className="w-9 h-9 rounded-xl bg-white flex items-center justify-center text-am-muted shrink-0">
                 <Music2 className="w-4 h-4" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-[15px] leading-snug">{r.title}</p>
-                <p className="text-[13px] text-nm-text-muted">{r.artist}</p>
+                <p className="text-[15px] leading-snug font-medium text-am-text">{r.title}</p>
+                <p className="text-[13px] text-am-muted">{r.artist}</p>
                 {r.reason && (
-                  <p className="text-[12px] text-nm-text-muted mt-1 leading-relaxed">{r.reason}</p>
+                  <p className="text-[12px] text-am-muted mt-1 leading-relaxed">{r.reason}</p>
                 )}
                 {r.estimatedKey && (
-                  <span className="inline-block text-[11px] text-nm-text-muted nm-inset-sm rounded-full px-2 py-0.5 mt-1.5">
+                  <span className="inline-block text-[11px] text-am-muted bg-white rounded-full px-2 py-0.5 mt-1.5">
                     조성 {r.estimatedKey} (추정)
                   </span>
                 )}
               </div>
-              <ExternalLink className="w-4 h-4 text-nm-text-muted shrink-0 mt-1" />
+              <ExternalLink className="w-4 h-4 text-am-muted shrink-0 mt-1" />
             </a>
           ))}
-          <p className="text-[11px] text-nm-text-muted/80 text-center pt-2">
+          <p className="text-[11px] text-am-muted/80 text-center pt-2">
             누르면 유튜브에서 검색됩니다
           </p>
         </div>

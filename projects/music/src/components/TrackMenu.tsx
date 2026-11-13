@@ -2,6 +2,7 @@ import { useState } from "react";
 import { MoreHorizontal, ListPlus, Trash2, ListMinus } from "lucide-react";
 import { useLibraryStore } from "../store/libraryStore";
 import type { Track } from "../types";
+import { ConfirmDialog } from "./ConfirmDialog";
 
 interface TrackMenuProps {
   track: Track;
@@ -11,6 +12,7 @@ interface TrackMenuProps {
 export function TrackMenu({ track, playlistIdContext }: TrackMenuProps) {
   const [open, setOpen] = useState(false);
   const [showPlaylists, setShowPlaylists] = useState(false);
+  const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   const playlists = useLibraryStore((s) => s.playlists);
   const addToPlaylist = useLibraryStore((s) => s.addToPlaylist);
   const removeFromPlaylist = useLibraryStore((s) => s.removeFromPlaylist);
@@ -19,6 +21,7 @@ export function TrackMenu({ track, playlistIdContext }: TrackMenuProps) {
   const close = () => {
     setOpen(false);
     setShowPlaylists(false);
+    setShowConfirmDelete(false);
   };
 
   return (
@@ -27,7 +30,7 @@ export function TrackMenu({ track, playlistIdContext }: TrackMenuProps) {
         type="button"
         aria-label="더보기"
         onClick={() => setOpen((v) => !v)}
-        className="w-9 h-9 flex items-center justify-center rounded-full text-nm-text-muted"
+        className="w-9 h-9 am-icon-btn flex items-center justify-center shrink-0 text-am-muted hover:text-am-text"
       >
         <MoreHorizontal className="w-5 h-5" />
       </button>
@@ -35,12 +38,12 @@ export function TrackMenu({ track, playlistIdContext }: TrackMenuProps) {
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={close} />
-          <div className="absolute right-0 top-10 z-50 w-56 nm-raised rounded-2xl p-2 text-sm">
+          <div className="absolute right-0 top-10 z-50 w-56 bg-white border border-am-separator rounded-2xl p-1.5 text-sm">
             {!showPlaylists ? (
               <>
                 <button
                   type="button"
-                  className="w-full flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-nm-text/10 transition-colors text-left"
+                  className="w-full flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-am-fill transition-colors text-left text-am-text"
                   onClick={() => setShowPlaylists(true)}
                 >
                   <ListPlus className="w-4 h-4" /> 재생목록에 추가
@@ -48,7 +51,7 @@ export function TrackMenu({ track, playlistIdContext }: TrackMenuProps) {
                 {playlistIdContext && (
                   <button
                     type="button"
-                    className="w-full flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-nm-text/10 transition-colors text-left"
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-am-fill transition-colors text-left text-am-text"
                     onClick={() => {
                       removeFromPlaylist(playlistIdContext, track.id);
                       close();
@@ -59,23 +62,20 @@ export function TrackMenu({ track, playlistIdContext }: TrackMenuProps) {
                 )}
                 <button
                   type="button"
-                  className="w-full flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-nm-text/10 transition-colors text-left text-red-500"
-                  onClick={() => {
-                    deleteTrack(track.id);
-                    close();
-                  }}
+                  className="w-full flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-am-fill transition-colors text-left text-am-accent"
+                  onClick={() => setShowConfirmDelete(true)}
                 >
                   <Trash2 className="w-4 h-4" /> 라이브러리에서 삭제
                 </button>
               </>
             ) : playlists.length === 0 ? (
-              <p className="px-3 py-2 text-nm-text-muted">재생목록이 없습니다</p>
+              <p className="px-3 py-2 text-am-muted">재생목록이 없습니다</p>
             ) : (
               playlists.map((p) => (
                 <button
                   key={p.id}
                   type="button"
-                  className="w-full flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-nm-text/10 transition-colors text-left truncate"
+                  className="w-full flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-am-fill transition-colors text-left truncate text-am-text"
                   onClick={() => {
                     addToPlaylist(p.id, track.id);
                     close();
@@ -87,6 +87,19 @@ export function TrackMenu({ track, playlistIdContext }: TrackMenuProps) {
             )}
           </div>
         </>
+      )}
+
+      {showConfirmDelete && (
+        <ConfirmDialog
+          title="라이브러리에서 삭제할까요?"
+          description={`"${track.title}"이(가) 모든 재생목록에서도 함께 삭제됩니다.`}
+          confirmLabel="삭제"
+          onCancel={() => setShowConfirmDelete(false)}
+          onConfirm={() => {
+            deleteTrack(track.id);
+            close();
+          }}
+        />
       )}
     </div>
   );

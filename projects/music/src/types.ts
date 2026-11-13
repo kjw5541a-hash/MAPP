@@ -14,6 +14,11 @@ export interface Track {
   liked?: boolean;
   /** Manual sort key within the liked list, set when a track is liked. */
   likeOrder?: number;
+  trackNumber?: number;
+  diskNumber?: number;
+  genre?: string;
+  year?: number;
+  albumArtist?: string;
 }
 
 export interface Playlist {
@@ -32,3 +37,36 @@ export type QueueSource =
   | { type: "album"; album: string }
   | { type: "artist"; artist: string }
   | { type: "playlist"; playlistId: string };
+
+export interface LibraryBackupTrack {
+  id: string;
+  title: string;
+  artist: string;
+  album: string;
+  duration: number;
+  lyrics?: string;
+  dateAdded?: number;
+  hash?: string;
+  liked?: boolean;
+  likeOrder?: number;
+}
+
+export interface LibraryBackupPlaylist {
+  id: string;
+  name: string;
+  trackIds: string[];
+  dateCreated: number;
+  order: number;
+}
+
+export interface LibraryBackup {
+  version: number;
+  exportDate: number;
+  tracks: LibraryBackupTrack[];
+  playlists: LibraryBackupPlaylist[];
+}
+
+export interface RestoreResult {
+  restoredLikes: number;
+  restoredPlaylists: number;
+}

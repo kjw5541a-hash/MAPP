@@ -35,7 +35,12 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-180.png'],
+      includeAssets: [
+        'icons/icon-192.png',
+        'icons/icon-512.png',
+        'icons/icon-180.png',
+        'icons/icon-maskable-512.png',
+      ],
       manifest: {
         name: 'Music',
         short_name: 'Music',
@@ -43,19 +48,21 @@ export default defineConfig({
         start_url: '.',
         scope: '.',
         display: 'standalone',
-        background_color: '#e0e5ec',
-        theme_color: '#e0e5ec',
+        background_color: '#ffffff',
+        theme_color: '#ffffff',
         icons: [
           { src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png' },
           { src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png' },
-          { src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+          {
+            src: 'icons/icon-maskable-512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable',
+          },
         ],
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,png,svg,ico,webmanifest}'],
-        // The theme maker is a separate app published under this scope; let
-        // its navigations reach the network instead of the player's shell.
-        navigateFallbackDenylist: [/^\/MAPP\/kakao\//],
         // Always answer navigations from the precached shell, so a network
         // error page can never replace the running app mid-playback.
         navigateFallback: `${base}index.html`,

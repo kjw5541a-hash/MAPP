@@ -38,34 +38,34 @@ export function DetailScreen({
   return (
     <div className="flex flex-col h-full">
       <BackHeader title={title} onBack={onBack} />
-      <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain nm-scrollbar-none px-4 pb-4">
+      <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain no-scrollbar px-4 pb-4">
         <div className="flex flex-col items-center text-center py-4 gap-3">
-          <CoverArt artKey={coverArtKey} alt={title} className="w-44 h-44" rounded="rounded-2xl" />
+          <CoverArt artKey={coverArtKey} alt={title} className="w-44 h-44" rounded="rounded-lg" />
           <div>
-            <h2 className="text-xl font-semibold">{title}</h2>
-            {subtitle && <p className="text-sm text-nm-text-muted mt-1">{subtitle}</p>}
-            <p className="text-xs text-nm-text-muted mt-1">{tracks.length}곡</p>
+            <h2 className="text-xl font-bold text-am-text">{title}</h2>
+            {subtitle && <p className="text-sm text-am-muted mt-1">{subtitle}</p>}
+            <p className="text-xs text-am-muted mt-1">{tracks.length}곡</p>
           </div>
           {headerExtra}
           <div className="flex gap-3 mt-2">
             <button
               type="button"
               onClick={() => playAll(0)}
-              className="flex items-center gap-2 px-6 py-2.5 rounded-full nm-raised text-nm-accent font-medium"
+              className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-am-fill text-am-accent font-semibold hover:bg-am-fill/80 transition-colors"
             >
               <Play className="w-4 h-4 fill-current" /> 재생
             </button>
             <button
               type="button"
               onClick={() => playShuffled(tracks, source)}
-              className="flex items-center gap-2 px-6 py-2.5 rounded-full nm-raised text-nm-accent font-medium"
+              className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-am-fill text-am-accent font-semibold hover:bg-am-fill/80 transition-colors"
             >
               <Shuffle className="w-4 h-4" /> 셔플
             </button>
           </div>
         </div>
 
-        <div className="flex flex-col gap-1 mt-2">
+        <div className="flex flex-col mt-2">
           {tracks.map((track, i) => (
             <TrackRow
               key={track.id}

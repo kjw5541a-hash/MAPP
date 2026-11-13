@@ -15,6 +15,7 @@ export function useDragReorder(ids: string[], onCommit: (ids: string[]) => void)
   const originalIndex = useRef(0);
   const currentIndex = useRef(0);
   const rowRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const workingIdsRef = useRef<string[] | null>(null);
 
   const orderedIds = workingIds ?? ids;
 
@@ -23,6 +24,7 @@ export function useDragReorder(ids: string[], onCommit: (ids: string[]) => void)
     rowHeight.current = (el?.getBoundingClientRect().height ?? 60) + ROW_GAP;
     originalIndex.current = index;
     currentIndex.current = index;
+    workingIdsRef.current = ids;
     setWorkingIds(ids);
     setDraggingId(trackId);
   };
@@ -36,17 +38,18 @@ export function useDragReorder(ids: string[], onCommit: (ids: string[]) => void)
     setDragOffsetY(deltaY - appliedSteps * step);
 
     if (targetIndex !== currentIndex.current) {
-      setWorkingIds((prev) => {
-        if (!prev) return prev;
-        const from = prev.indexOf(trackId);
-        return arrayMove(prev, from, targetIndex);
-      });
+      const prev = workingIdsRef.current ?? ids;
+      const from = prev.indexOf(trackId);
+      const next = arrayMove(prev, from, targetIndex);
+      workingIdsRef.current = next;
+      setWorkingIds(next);
       currentIndex.current = targetIndex;
     }
   };
 
   const endDrag = () => {
-    if (workingIds) onCommit(workingIds);
+    if (workingIdsRef.current) onCommit(workingIdsRef.current);
+    workingIdsRef.current = null;
     setWorkingIds(null);
     setDraggingId(null);
     setDragOffsetY(0);

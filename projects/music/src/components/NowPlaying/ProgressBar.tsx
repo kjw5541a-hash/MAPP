@@ -29,11 +29,16 @@ export function ProgressBar() {
         onChange={(e) => setDragValue(Number(e.target.value))}
         onMouseUp={commit}
         onTouchEnd={commit}
+        onKeyUp={(e) => {
+          if (e.key.startsWith("Arrow") || e.key === "Home" || e.key === "End") {
+            commit();
+          }
+        }}
         disabled={max === 0}
-        className="nm-progress w-full"
+        className="am-progress w-full"
         style={{ ["--progress-pct" as string]: `${max ? (value / max) * 100 : 0}%` }}
       />
-      <div className="flex justify-between text-[12px] text-nm-text-muted tabular-nums mt-1">
+      <div className="flex justify-between text-[12px] text-am-muted tabular-nums mt-1">
         <span>{formatDuration(value)}</span>
         <span>-{formatDuration(Math.max(max - value, 0))}</span>
       </div>

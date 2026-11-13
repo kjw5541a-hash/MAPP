@@ -18,8 +18,8 @@ export function Controls() {
         aria-label="셔플"
         aria-pressed={shuffle}
         onClick={toggleShuffle}
-        className={`w-11 h-11 rounded-full flex items-center justify-center transition-all ${
-          shuffle ? "nm-pressed text-nm-accent" : "text-nm-text-muted"
+        className={`w-11 h-11 am-icon-btn flex items-center justify-center transition-colors ${
+          shuffle ? "text-am-accent" : "text-am-text"
         }`}
       >
         <Shuffle className="w-4.5 h-4.5" />
@@ -29,7 +29,7 @@ export function Controls() {
         type="button"
         aria-label="이전 곡"
         onClick={prev}
-        className="w-12 h-12 flex items-center justify-center"
+        className="w-12 h-12 am-icon-btn flex items-center justify-center text-am-text"
       >
         <SkipBack className="w-7 h-7 fill-current" />
       </button>
@@ -38,7 +38,7 @@ export function Controls() {
         type="button"
         aria-label={isPlaying ? "일시정지" : "재생"}
         onClick={togglePlay}
-        className="w-16 h-16 rounded-full nm-accent-btn flex items-center justify-center"
+        className="w-16 h-16 rounded-full am-accent-btn flex items-center justify-center"
       >
         {isPlaying ? (
           <Pause className="w-7 h-7 fill-current" />
@@ -51,7 +51,7 @@ export function Controls() {
         type="button"
         aria-label="다음 곡"
         onClick={next}
-        className="w-12 h-12 flex items-center justify-center"
+        className="w-12 h-12 am-icon-btn flex items-center justify-center text-am-text"
       >
         <SkipForward className="w-7 h-7 fill-current" />
       </button>
@@ -61,8 +61,8 @@ export function Controls() {
         aria-label="반복"
         aria-pressed={repeat !== "off"}
         onClick={cycleRepeat}
-        className={`w-11 h-11 rounded-full flex items-center justify-center transition-all ${
-          repeat !== "off" ? "nm-pressed text-nm-accent" : "text-nm-text-muted"
+        className={`w-11 h-11 am-icon-btn flex items-center justify-center transition-colors ${
+          repeat !== "off" ? "text-am-accent" : "text-am-text"
         }`}
       >
         {repeat === "one" ? <Repeat1 className="w-4.5 h-4.5" /> : <Repeat className="w-4.5 h-4.5" />}

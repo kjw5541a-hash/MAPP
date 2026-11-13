@@ -25,11 +25,11 @@ export function AlbumsGrid() {
             artKey={group.tracks[0].artKey}
             alt={group.album}
             className="w-full aspect-square"
-            rounded="rounded-2xl"
+            rounded="rounded-lg"
           />
           <div className="min-w-0">
-            <p className="truncate text-[14px] font-medium">{group.album}</p>
-            <p className="truncate text-[12px] text-nm-text-muted">{group.artist}</p>
+            <p className="truncate text-[14px] font-medium text-am-text">{group.album}</p>
+            <p className="truncate text-[12px] text-am-muted">{group.artist}</p>
           </div>
         </button>
       ))}

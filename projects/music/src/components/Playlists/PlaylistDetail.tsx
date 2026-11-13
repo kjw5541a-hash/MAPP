@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Play, Shuffle, Trash2, Plus } from "lucide-react";
+import { Play, Shuffle, Trash2, Plus, Pencil } from "lucide-react";
 import { useLibraryStore } from "../../store/libraryStore";
 import { useUIStore } from "../../store/uiStore";
 import { usePlayerStore } from "../../store/playerStore";
@@ -9,6 +9,7 @@ import { CoverArt } from "../CoverArt";
 import { ConfirmDialog } from "../ConfirmDialog";
 import { ReorderableTrackRow } from "../ReorderableTrackRow";
 import { TrackPickerModal } from "./TrackPickerModal";
+import { RenamePlaylistModal } from "./RenamePlaylistModal";
 import type { Track } from "../../types";
 
 export function PlaylistDetail({ playlistId }: { playlistId: string }) {
@@ -17,6 +18,7 @@ export function PlaylistDetail({ playlistId }: { playlistId: string }) {
   const deletePlaylist = useLibraryStore((s) => s.deletePlaylist);
   const removeFromPlaylist = useLibraryStore((s) => s.removeFromPlaylist);
   const reorderPlaylist = useLibraryStore((s) => s.reorderPlaylist);
+  const renamePlaylist = useLibraryStore((s) => s.renamePlaylist);
   const closeDetail = useUIStore((s) => s.closeDetail);
   const playQueue = usePlayerStore((s) => s.playQueue);
   const playShuffled = usePlayerStore((s) => s.playShuffled);
@@ -25,6 +27,7 @@ export function PlaylistDetail({ playlistId }: { playlistId: string }) {
   const [confirmDeletePlaylist, setConfirmDeletePlaylist] = useState(false);
   const [pendingRemove, setPendingRemove] = useState<Track | null>(null);
   const [showTrackPicker, setShowTrackPicker] = useState(false);
+  const [showRenameModal, setShowRenameModal] = useState(false);
 
   const { orderedIds, draggingId, dragOffsetY, rowRefs, startDrag, moveDrag, endDrag } =
     useDragReorder(playlist?.trackIds ?? [], (ids) => reorderPlaylist(playlistId, ids));
@@ -40,59 +43,84 @@ export function PlaylistDetail({ playlistId }: { playlistId: string }) {
     closeDetail();
   };
 
+  const buttons = (
+    <div className="flex gap-3">
+      <button
+        type="button"
+        disabled={tracks.length === 0}
+        onClick={() => playQueue(tracks, 0, { type: "playlist", playlistId })}
+        className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-am-fill text-am-accent font-semibold hover:bg-am-fill/80 transition-colors disabled:opacity-40"
+      >
+        <Play className="w-4 h-4 fill-current" /> 재생
+      </button>
+      <button
+        type="button"
+        disabled={tracks.length === 0}
+        onClick={() => playShuffled(tracks, { type: "playlist", playlistId })}
+        className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-am-fill text-am-accent font-semibold hover:bg-am-fill/80 transition-colors disabled:opacity-40"
+      >
+        <Shuffle className="w-4 h-4" /> 셔플
+      </button>
+      <button
+        type="button"
+        onClick={() => setShowTrackPicker(true)}
+        aria-label="곡 추가"
+        className="flex items-center justify-center w-11 h-11 rounded-full bg-am-fill text-am-accent hover:bg-am-fill/80 transition-colors"
+      >
+        <Plus className="w-4 h-4" />
+      </button>
+      <button
+        type="button"
+        onClick={() => setConfirmDeletePlaylist(true)}
+        aria-label="재생목록 삭제"
+        className="flex items-center justify-center w-11 h-11 rounded-full bg-am-fill text-am-accent hover:bg-am-fill/80 transition-colors"
+      >
+        <Trash2 className="w-4 h-4" />
+      </button>
+    </div>
+  );
+
   return (
     <div className="flex flex-col h-full">
       <BackHeader title={playlist.name} onBack={closeDetail} />
-      <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain nm-scrollbar-none px-4 pb-4">
+      <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain no-scrollbar px-4 pb-4">
+        {/* Cover, title and track count scroll away with the list — no
+          animation, no scroll handler. Only the button row below is sticky,
+          with a fixed height that never changes, so scrolling stays 100%
+          native (no layout work during scroll, nothing jumps). */}
         <div className="flex flex-col items-center text-center py-4 gap-3">
           <CoverArt
             artKey={tracks[0]?.artKey}
             alt={playlist.name}
             className="w-44 h-44"
-            rounded="rounded-2xl"
+            rounded="rounded-lg"
           />
           <div>
-            <h2 className="text-xl font-semibold">{playlist.name}</h2>
-            <p className="text-xs text-nm-text-muted mt-1">{tracks.length}곡</p>
-          </div>
-          <div className="flex gap-3 mt-2">
-            <button
-              type="button"
-              disabled={tracks.length === 0}
-              onClick={() => playQueue(tracks, 0, { type: "playlist", playlistId })}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-full nm-raised text-nm-accent font-medium disabled:opacity-40"
-            >
-              <Play className="w-4 h-4 fill-current" /> 재생
-            </button>
-            <button
-              type="button"
-              disabled={tracks.length === 0}
-              onClick={() => playShuffled(tracks, { type: "playlist", playlistId })}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-full nm-raised text-nm-accent font-medium disabled:opacity-40"
-            >
-              <Shuffle className="w-4 h-4" /> 셔플
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowTrackPicker(true)}
-              aria-label="곡 추가"
-              className="flex items-center justify-center w-11 h-11 rounded-full nm-raised text-nm-accent"
-            >
-              <Plus className="w-4 h-4" />
-            </button>
-            <button
-              type="button"
-              onClick={() => setConfirmDeletePlaylist(true)}
-              aria-label="재생목록 삭제"
-              className="flex items-center justify-center w-11 h-11 rounded-full nm-raised text-red-500"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
+            <h2 className="text-xl font-bold text-am-text flex items-center justify-center">
+              <button
+                type="button"
+                onClick={() => setShowRenameModal(true)}
+                aria-label={`재생목록 이름 수정: ${playlist.name}`}
+                className="inline-flex items-center justify-center gap-1.5 max-w-full min-w-0 px-2 py-0.5 -my-0.5 rounded-xl hover:bg-am-fill active:bg-am-fill/80 transition-colors group"
+              >
+                <span className="truncate">{playlist.name}</span>
+                <Pencil className="w-4 h-4 text-am-muted shrink-0 group-hover:text-am-accent transition-colors" />
+              </button>
+            </h2>
+            <p className="text-xs text-am-muted mt-1">{tracks.length}곡</p>
           </div>
         </div>
 
+        {/* Sticky button row: fixed height (tallest button 44px + py-2),
+          opaque background so list rows never show through, z-index above
+          the list. Occupies flow space, so the first track row is never
+          covered when the buttons stick. */}
+        <div className="sticky top-0 z-20 bg-am-bg -mx-4 px-4 py-2 flex justify-center border-b border-am-separator">
+          {buttons}
+        </div>
+
         {tracks.length === 0 ? (
-          <p className="text-center text-sm text-nm-text-muted py-10">
+          <p className="text-center text-sm text-am-muted py-10">
             아직 이 재생목록에 곡이 없습니다.
             <br />+ 버튼으로 곡을 추가해보세요.
           </p>
@@ -144,6 +172,18 @@ export function PlaylistDetail({ playlistId }: { playlistId: string }) {
           playlistId={playlistId}
           existingTrackIds={playlist.trackIds}
           onClose={() => setShowTrackPicker(false)}
+        />
+      )}
+
+      {showRenameModal && (
+        <RenamePlaylistModal
+          initialName={playlist.name}
+          onClose={() => setShowRenameModal(false)}
+          onRename={(newName) => {
+            if (newName !== playlist.name) {
+              renamePlaylist(playlistId, newName);
+            }
+          }}
         />
       )}
     </div>
