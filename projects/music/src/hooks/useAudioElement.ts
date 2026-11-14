@@ -60,6 +60,14 @@ export function useAudioElement() {
   // once the src is ready, so this ref is the only gate the sync effect
   // needs.
   const loadedTrackIdRef = useRef<string | null>(null);
+  // Set when the element paused while the store still said playing, i.e.
+  // the pause came from the system (incoming call, alarm) rather than the
+  // user. A user pause flips the store's isPlaying to false BEFORE the
+  // element pauses (the sync effect calls audio.pause()), so by the time
+  // the pause event arrives the store already says paused — that is the
+  // discriminator. iOS does not auto-resume web audio after the
+  // interruption ends, so a foreground event tries to resume instead.
+  const interruptedRef = useRef(false);
 
   const revokeUrls = () => {
     if (objectUrlRef.current) {
@@ -117,6 +125,10 @@ export function useAudioElement() {
   useEffect(() => {
     let cancelled = false;
     const audio = audioRef.current!;
+
+    // A new track (or no track) makes any earlier interruption moot:
+    // never resume the old track after a switch.
+    interruptedRef.current = false;
 
     if (!currentTrack) {
       audio.pause();
@@ -213,6 +225,10 @@ export function useAudioElement() {
   useEffect(() => {
     const audio = audioRef.current!;
     if (isPlaying) {
+      // The user (or an auto-resume) asked to play: any earlier
+      // interruption is settled, so a later foreground event must not
+      // resume on its own.
+      interruptedRef.current = false;
       // Play only when the current track's source is actually loaded.
       // Before the async load finishes, audio.src still holds the previous
       // track (or nothing on first play): a play() there rejects, and that
@@ -284,21 +300,75 @@ export function useAudioElement() {
       }
       updatePositionState(audio.duration, audio.currentTime);
     };
-    const onEnded = () => onTrackEnded();
+    const onEnded = () => {
+      // The track finished on its own; there is nothing to resume.
+      interruptedRef.current = false;
+      onTrackEnded();
+    };
     // Swapping src on a playing element makes the browser fire a pause event
     // for the old resource; that stale event must not stop the new track.
     // A genuine system pause (call, alarm) arrives well after the swap.
     const onPause = () => {
       if (Date.now() - lastSrcChangeRef.current < 1000) return;
+      // A user pause flips the store's isPlaying to false BEFORE the
+      // element pauses (the sync effect calls audio.pause()), so when this
+      // event arrives the store already says paused. A system interruption
+      // pauses the element while the store still says playing — that is
+      // the discriminator. Record the interruption, then keep the existing
+      // behaviour of showing paused during the call.
+      if (usePlayerStore.getState().isPlaying) {
+        interruptedRef.current = true;
+      } else {
+        interruptedRef.current = false;
+      }
       setPlaying(false);
     };
     const onError = () => setPlaying(false);
+
+    // iOS does not auto-resume web audio after a system interruption
+    // (incoming call, alarm) ends. The interruption is recorded in
+    // onPause; when the app comes back to the foreground, try once to
+    // resume at the same position.
+    const tryResumeAfterInterruption = () => {
+      if (!interruptedRef.current) return;
+      // Not foregrounded yet (e.g. a focus event while still hidden):
+      // keep the flag so the later foreground event can still resume.
+      if (document.visibilityState !== "visible") return;
+      const current = usePlayerStore.getState().currentTrack();
+      if (!current || loadedTrackIdRef.current !== current.id) {
+        interruptedRef.current = false;
+        return;
+      }
+      if (!audio.paused) {
+        interruptedRef.current = false;
+        return;
+      }
+      interruptedRef.current = false;
+      audio.play().then(() => {
+        // Sync the store to playing. The sync effect calling play() again
+        // on the already-playing element is a harmless no-op.
+        usePlayerStore.getState().setPlaying(true);
+      }).catch(() => {
+        // Auto-resume failed (e.g. the audio session is not ready yet):
+        // stay paused silently. Manual play is the fallback — never show
+        // the "재생할 수 없습니다" error for an auto-resume, and never
+        // retry in a loop.
+      });
+    };
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") tryResumeAfterInterruption();
+    };
+    const onWindowFocus = () => tryResumeAfterInterruption();
+    const onPageShow = () => tryResumeAfterInterruption();
 
     audio.addEventListener("timeupdate", onTimeUpdate);
     audio.addEventListener("loadedmetadata", onLoadedMetadata);
     audio.addEventListener("ended", onEnded);
     audio.addEventListener("pause", onPause);
     audio.addEventListener("error", onError);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    window.addEventListener("focus", onWindowFocus);
+    window.addEventListener("pageshow", onPageShow);
 
     if ("mediaSession" in navigator) {
       navigator.mediaSession.setActionHandler("play", () => setPlaying(true));
@@ -326,6 +396,9 @@ export function useAudioElement() {
       audio.removeEventListener("ended", onEnded);
       audio.removeEventListener("pause", onPause);
       audio.removeEventListener("error", onError);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener("focus", onWindowFocus);
+      window.removeEventListener("pageshow", onPageShow);
       revokeUrls();
     };
   }, []);
